@@ -1,11 +1,10 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class BridgeMiniJson
     {
@@ -377,5 +376,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-

@@ -1,10 +1,9 @@
-#if UNITY_EDITOR
 using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal sealed class UnityMcpServerWindow : EditorWindow
     {
@@ -25,7 +24,7 @@ namespace Blanketmen.UnityMcpBridge.Editor
         {
             if (window != null)
             {
-                window.Repaint();
+                EditorApplication.delayCall += () => window?.Repaint();
             }
         }
 
@@ -266,6 +265,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-
-

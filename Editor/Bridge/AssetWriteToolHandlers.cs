@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class AssetWriteToolHandlers
     {
@@ -426,5 +425,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-

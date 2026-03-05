@@ -1,11 +1,10 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class BridgeResponses
     {
@@ -164,5 +163,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-

@@ -1,0 +1,16 @@
+﻿{
+  "name": "Blanketmen.UnityMcp.Bridge.Editor",
+  "rootNamespace": "Blanketmen.UnityMcp.Bridge.Editor",
+  "references": [],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

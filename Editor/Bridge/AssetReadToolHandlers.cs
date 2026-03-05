@@ -1,11 +1,10 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class AssetReadToolHandlers
     {
@@ -502,5 +501,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-

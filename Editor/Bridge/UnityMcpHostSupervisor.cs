@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -12,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     [InitializeOnLoad]
     internal static class UnityMcpHostSupervisor
@@ -106,6 +105,7 @@ namespace Blanketmen.UnityMcpBridge.Editor
             ApplyCurrentProcessEnvironment(settings);
             return StartHostInternal(settings, runStartupProbe: true);
         }
+
         public static void StartBridgeOnly()
         {
             UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
@@ -888,9 +888,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-
-
-
-
-

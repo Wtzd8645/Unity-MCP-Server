@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +5,7 @@ using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class CoreToolHandlers
     {
@@ -312,4 +311,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif

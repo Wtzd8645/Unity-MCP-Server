@@ -1,5 +1,4 @@
-#if UNITY_EDITOR
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     internal static class BridgeToolDispatcher
     {
@@ -92,5 +91,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         }
     }
 }
-#endif
-

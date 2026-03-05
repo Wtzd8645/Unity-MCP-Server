@@ -54,6 +54,14 @@ In `Server Control`, configure:
 - `Host Project Path` (default: `Editor/Host~/UnityMcpServer.Host.csproj`)
 - Bridge transport / timeout and write allowlists
 
+`Host Project Path` supports relative or absolute paths. For relative paths, the bridge resolves candidates against:
+- `Package Root Override` (if set)
+- resolved package root (`PackageInfo`)
+- Unity project root
+- `Packages/com.blanketmen.mcp.bridge`
+- `Library/PackageCache/com.blanketmen.mcp.bridge*`
+
+It also falls back to legacy path `src/UnityMcpServer.Host/UnityMcpServer.Host.csproj` for older checkouts.
 Then click `Start Full Server` to:
 
 1. Start Unity bridge (`UnityMcpBridgeServer`)

@@ -1,18 +1,18 @@
-#if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     [FilePath("ProjectSettings/UnityMcpHostSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     internal sealed class UnityMcpHostSettings : ScriptableSingleton<UnityMcpHostSettings>
     {
         private const string DefaultDotnetExecutable = "dotnet";
         private const string DefaultHostProjectRelativePath = "Editor/Host~/UnityMcpServer.Host.csproj";
+        private const string PackageName = "com.blanketmen.unity-mcp.server";
         private const string DefaultBridgeTransport = "http";
         private const string DefaultBridgeHttpUrl = "http://127.0.0.1:38100/";
         private const string DefaultBridgePipeName = "unity-mcp-bridge";
@@ -154,9 +154,105 @@ namespace Blanketmen.UnityMcpBridge.Editor
                 return Path.GetFullPath(configured);
             }
 
-            return Path.GetFullPath(Path.Combine(ResolveRepositoryRoot(), configured));
+            List<string> relativeCandidates = BuildRelativeHostProjectCandidates(configured);
+            List<string> rootCandidates = EnumerateRootCandidates();
+
+            for (int i = 0; i < relativeCandidates.Count; i++)
+            {
+                string relativePath = relativeCandidates[i];
+                for (int j = 0; j < rootCandidates.Count; j++)
+                {
+                    string root = rootCandidates[j];
+                    string candidate = Path.GetFullPath(Path.Combine(root, relativePath));
+                    if (File.Exists(candidate))
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            return Path.GetFullPath(Path.Combine(ResolveRepositoryRoot(), relativeCandidates[0]));
         }
 
+        private static List<string> BuildRelativeHostProjectCandidates(string configured)
+        {
+            var candidates = new List<string>();
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                candidates.Add(configured);
+            }
+
+            string defaultRelative = DefaultHostProjectRelativePath.Replace('/', Path.DirectorySeparatorChar);
+            if (!string.IsNullOrWhiteSpace(defaultRelative) &&
+                !string.Equals(configured, defaultRelative, StringComparison.OrdinalIgnoreCase))
+            {
+                candidates.Add(defaultRelative);
+            }
+
+            return candidates;
+        }
+
+        private List<string> EnumerateRootCandidates()
+        {
+            var roots = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(RepositoryRootOverride))
+            {
+                AddDistinct(roots, Path.GetFullPath(RepositoryRootOverride));
+            }
+
+            string packageRoot = TryResolvePackageRoot();
+            if (!string.IsNullOrEmpty(packageRoot))
+            {
+                AddDistinct(roots, packageRoot);
+            }
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            AddDistinct(roots, projectRoot);
+
+            string embeddedPath = Path.Combine(projectRoot, "Packages", PackageName);
+            if (Directory.Exists(embeddedPath))
+            {
+                AddDistinct(roots, embeddedPath);
+            }
+
+            string packageCacheRoot = Path.Combine(projectRoot, "Library", "PackageCache");
+            if (Directory.Exists(packageCacheRoot))
+            {
+                string[] exactMatches = Directory.GetDirectories(packageCacheRoot, PackageName + "@*");
+                for (int i = 0; i < exactMatches.Length; i++)
+                {
+                    AddDistinct(roots, exactMatches[i]);
+                }
+
+                string[] looseMatches = Directory.GetDirectories(packageCacheRoot, PackageName + "*");
+                for (int i = 0; i < looseMatches.Length; i++)
+                {
+                    AddDistinct(roots, looseMatches[i]);
+                }
+            }
+
+            return roots;
+        }
+
+        private static void AddDistinct(List<string> items, string value)
+        {
+            if (items == null || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            string normalized = Path.GetFullPath(value);
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (string.Equals(items[i], normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            items.Add(normalized);
+        }
         public void SaveSettingsToDisk()
         {
             Save(true);
@@ -201,10 +297,37 @@ namespace Blanketmen.UnityMcpBridge.Editor
                 // Best effort only.
             }
 
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string embeddedPath = Path.Combine(projectRoot, "Packages", PackageName);
+                if (Directory.Exists(embeddedPath))
+                {
+                    return Path.GetFullPath(embeddedPath);
+                }
+
+                string packageCacheRoot = Path.Combine(projectRoot, "Library", "PackageCache");
+                if (Directory.Exists(packageCacheRoot))
+                {
+                    string[] exactMatches = Directory.GetDirectories(packageCacheRoot, PackageName + "@*");
+                    if (exactMatches.Length > 0)
+                    {
+                        return Path.GetFullPath(exactMatches[0]);
+                    }
+
+                    string[] looseMatches = Directory.GetDirectories(packageCacheRoot, PackageName + "*");
+                    if (looseMatches.Length > 0)
+                    {
+                        return Path.GetFullPath(looseMatches[0]);
+                    }
+                }
+            }
+            catch
+            {
+                // Best effort only.
+            }
+
             return string.Empty;
         }
     }
 }
-#endif
-
-

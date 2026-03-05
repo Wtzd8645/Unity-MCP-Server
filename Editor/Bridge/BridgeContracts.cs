@@ -1,8 +1,7 @@
-#if UNITY_EDITOR
 using System;
 using UnityEngine;
 
-namespace Blanketmen.UnityMcpBridge.Editor
+namespace Blanketmen.UnityMcp.Bridge.Editor
 {
     [Serializable]
     internal class BridgeToolCallRequest
@@ -699,5 +698,3 @@ namespace Blanketmen.UnityMcpBridge.Editor
         public int limit;
     }
 }
-#endif
-
