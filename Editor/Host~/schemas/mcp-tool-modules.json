@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unity MCP Tool Modules",
+  "version": "0.1.0",
+  "modules": [
+    {
+      "name": "core",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity.ping",
+        "unity.project_info",
+        "unity.playmode_status",
+        "unity.playmode_start",
+        "unity.playmode_stop"
+      ]
+    },
+    {
+      "name": "diagnostics",
+      "risk": "low-medium",
+      "enabledByDefault": true,
+      "tools": [
+        "unity.get_console_logs",
+        "unity.clear_console",
+        "unity.run_tests"
+      ]
+    },
+    {
+      "name": "scene_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity.list_scenes",
+        "unity.open_scene",
+        "unity.go_find",
+        "unity.component_get_fields"
+      ]
+    },
+    {
+      "name": "scene_write",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity.go_create",
+        "unity.go_delete",
+        "unity.go_duplicate",
+        "unity.go_reparent",
+        "unity.go_rename",
+        "unity.go_set_active",
+        "unity.component_add",
+        "unity.component_remove",
+        "unity.component_set_fields"
+      ]
+    },
+    {
+      "name": "prefab_write",
+      "risk": "medium-high",
+      "enabledByDefault": false,
+      "tools": [
+        "unity.prefab_create",
+        "unity.prefab_instantiate",
+        "unity.prefab_apply_overrides",
+        "unity.prefab_revert_overrides",
+        "unity.prefab_unpack",
+        "unity.prefab_create_variant"
+      ]
+    },
+    {
+      "name": "asset_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity.asset_search",
+        "unity.asset_get",
+        "unity.asset_refs"
+      ]
+    },
+    {
+      "name": "asset_write",
+      "risk": "high",
+      "enabledByDefault": false,
+      "tools": [
+        "unity.asset_move",
+        "unity.asset_rename",
+        "unity.asset_delete_to_trash",
+        "unity.asset_reimport",
+        "unity.asset_set_labels"
+      ]
+    }
+  ]
+}

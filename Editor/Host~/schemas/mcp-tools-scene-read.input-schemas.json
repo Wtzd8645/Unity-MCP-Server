@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unity MCP Scene Read Tool Input Schemas",
+  "version": "0.1.0",
+  "$defs": {
+    "scenePath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.unity$",
+      "description": "Scene path under Assets/"
+    },
+    "guid": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{32}$",
+      "description": "Unity GUID"
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Asset path under Assets/"
+    },
+    "folderPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Folder path under Assets/"
+    },
+    "prefabPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.prefab$",
+      "description": "Prefab path under Assets/"
+    },
+    "assetRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "guid": {
+              "$ref": "#/$defs/guid"
+            }
+          },
+          "required": [
+            "guid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/assetPath"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "gameObjectRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "globalObjectId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "globalObjectId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scenePath": {
+              "$ref": "#/$defs/scenePath"
+            },
+            "hierarchyPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "scenePath",
+            "hierarchyPath"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "vec3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "transformInput": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationEuler": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "$ref": "#/$defs/vec3"
+        },
+        "local": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "mutateFlags": {
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "dryRun"
+            ]
+          },
+          "then": {
+            "required": [
+              "apply"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "apply"
+            ]
+          },
+          "then": {
+            "required": [
+              "dryRun"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "dryRun",
+              "apply"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": true
+                  },
+                  "apply": {
+                    "const": false
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": false
+                  },
+                  "apply": {
+                    "const": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "unity.list_scenes",
+      "description": "List scenes from Build Settings and/or project assets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "buildSettings",
+              "assets",
+              "both"
+            ],
+            "default": "both"
+          },
+          "includeDisabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity.open_scene",
+      "description": "Open a scene in Editor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "openMode": {
+            "type": "string",
+            "enum": [
+              "Single",
+              "Additive",
+              "AdditiveWithoutLoading"
+            ],
+            "default": "Single"
+          },
+          "saveModifiedScenes": {
+            "type": "boolean",
+            "default": false
+          },
+          "setActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "scenePath"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity.go_find",
+      "description": "Find scene objects by conditions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "namePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "hasComponents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "hierarchyPathPrefix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inSelection": {
+            "type": "boolean",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity.component_get_fields",
+      "description": "Read serialized fields from a component.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "includePrivateSerialized": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tooling / IDE
+.vs/
+.vscode/
+.idea/
+.consulo/
+.gradle/
+.dotnet-cli-home/
+.utmp/
+
+# .NET build outputs
+**/bin/
+**/obj/
+
+# .NET / IDE user files
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.DotSettings.user
+*.opendb
+*.VC.db
+
+# Keep host project file tracked
+!Editor/Host~/*.csproj
+
+# Optional Unity project temp folders (if this repo is opened as a Unity project)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/ServerData
+
+# Logs / crash outputs
+*.log
+sysinfo.txt
+mono_crash.*
+crashlytics-build.properties
+
+# Build artifacts
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Unity-generated solution files
+*.sln
+*.unityproj
+ExportedObj/
