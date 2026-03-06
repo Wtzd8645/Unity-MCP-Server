@@ -32,7 +32,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         [SerializeField] private int startupProbeTimeoutMs = DefaultStartupProbeTimeoutMs;
         [SerializeField] private string allowedPathPrefixes = DefaultAllowedPathPrefixes;
         [SerializeField] private string allowedComponentTypes = DefaultAllowedComponentTypes;
-        [SerializeField] private bool autoStartBridgeWithHost = true;
         [SerializeField] private bool autoStartHostOnLoad;
 
         public static UnityMcpHostSettings GetOrCreate()
@@ -114,12 +113,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         {
             get { return string.IsNullOrWhiteSpace(allowedComponentTypes) ? DefaultAllowedComponentTypes : allowedComponentTypes.Trim(); }
             set { allowedComponentTypes = string.IsNullOrWhiteSpace(value) ? DefaultAllowedComponentTypes : value.Trim(); }
-        }
-
-        public bool AutoStartBridgeWithHost
-        {
-            get { return autoStartBridgeWithHost; }
-            set { autoStartBridgeWithHost = value; }
         }
 
         public bool AutoStartHostOnLoad
@@ -274,12 +267,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         private static string NormalizeTransport(string value)
         {
-            if (string.Equals(value, "pipe", StringComparison.OrdinalIgnoreCase))
-            {
-                return "pipe";
-            }
-
-            return "http";
+            return string.Equals(value, "pipe", StringComparison.OrdinalIgnoreCase) ? "pipe" : "http";
         }
 
         private static string TryResolvePackageRoot()

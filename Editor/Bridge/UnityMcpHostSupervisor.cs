@@ -25,13 +25,13 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static Process hostProcess;
         private static string lastStatus = "Host not started.";
         private static int nextRequestId;
-        private static bool autoStartChecked;
+
+        internal static event Action StateChanged;
 
         static UnityMcpHostSupervisor()
         {
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             EditorApplication.quitting += OnEditorQuitting;
-            EditorApplication.update += TryAutoStartHost;
         }
 
         public static bool IsHostRunning
@@ -56,94 +56,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
         }
 
-        [MenuItem("Tools/Unity MCP Bridge/Start Full Server")]
-        public static void StartFullServerFromMenu()
-        {
-            StartFullServer();
-        }
-
-        [MenuItem("Tools/Unity MCP Bridge/Stop Full Server")]
-        public static void StopFullServerFromMenu()
-        {
-            StopFullServer();
-        }
-
-        [MenuItem("Tools/Unity MCP Bridge/Start Full Server", true)]
-        private static bool CanStartFullServer()
-        {
-            return !UnityMcpBridgeServer.IsRunning || !IsHostRunning;
-        }
-
-        [MenuItem("Tools/Unity MCP Bridge/Stop Full Server", true)]
-        private static bool CanStopFullServer()
-        {
-            return UnityMcpBridgeServer.IsRunning || IsHostRunning;
-        }
-
-        public static bool StartFullServer()
-        {
-            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
-            ApplyCurrentProcessEnvironment(settings);
-
-            if (settings.AutoStartBridgeWithHost && !UnityMcpBridgeServer.IsRunning)
-            {
-                UnityMcpBridgeServer.Start();
-            }
-
-            bool started = StartHostInternal(settings, runStartupProbe: true);
-            if (started)
-            {
-                SetStatus("Full server running.");
-            }
-
-            return started;
-        }
-
-        public static bool StartHostOnly()
-        {
-            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
-            ApplyCurrentProcessEnvironment(settings);
-            return StartHostInternal(settings, runStartupProbe: true);
-        }
-
-        public static void StartBridgeOnly()
-        {
-            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
-            ApplyCurrentProcessEnvironment(settings);
-            if (!UnityMcpBridgeServer.IsRunning)
-            {
-                UnityMcpBridgeServer.Start();
-            }
-
-            SetStatus("Bridge running.");
-        }
-
-        public static void StopBridgeOnly()
-        {
-            if (UnityMcpBridgeServer.IsRunning)
-            {
-                UnityMcpBridgeServer.Stop();
-            }
-
-            SetStatus("Bridge stopped.");
-        }
-
-        public static void StopFullServer()
-        {
-            StopHost();
-            if (UnityMcpBridgeServer.IsRunning)
-            {
-                UnityMcpBridgeServer.Stop();
-            }
-
-            SetStatus("Full server stopped.");
-        }
-
-        public static void StopHost()
-        {
-            StopHostProcess("manual stop");
-        }
-
         public static string[] GetRecentLogs()
         {
             lock (SyncRoot)
@@ -159,10 +71,10 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 RecentLogs.Clear();
             }
 
-            UnityMcpServerWindow.RepaintIfOpen();
+            NotifyStateChanged();
         }
 
-        private static bool StartHostInternal(UnityMcpHostSettings settings, bool runStartupProbe)
+        internal static bool StartHostInternal(UnityMcpHostSettings settings, bool runStartupProbe)
         {
             lock (SyncRoot)
             {
@@ -273,7 +185,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             return startInfo;
         }
 
-        private static void ApplyCurrentProcessEnvironment(UnityMcpHostSettings settings)
+        internal static void ApplyCurrentProcessEnvironment(UnityMcpHostSettings settings)
         {
             string hostProjectPath = settings.ResolveHostProjectPath();
             string mcpRoot = Path.GetDirectoryName(hostProjectPath);
@@ -350,30 +262,26 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return false;
             }
 
-            object resultObject;
-            if (!toolsEnvelope.TryGetValue("result", out resultObject))
+            if (!toolsEnvelope.TryGetValue("result", out object resultObject))
             {
                 error = "tools/list response missing result.";
                 return false;
             }
 
-            var result = resultObject as Dictionary<string, object>;
-            if (result == null)
+            if (resultObject is not Dictionary<string, object> result)
             {
                 error = "tools/list result has unexpected shape.";
                 return false;
             }
 
-            object toolsObject;
-            if (!result.TryGetValue("tools", out toolsObject))
+            if (!result.TryGetValue("tools", out object toolsObject))
             {
                 error = "tools/list result missing tools.";
                 return false;
             }
 
             int toolCount = 0;
-            var tools = toolsObject as List<object>;
-            if (tools != null)
+            if (toolsObject is List<object> tools)
             {
                 toolCount = tools.Count;
             }
@@ -391,7 +299,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             out string error)
         {
             envelope = null;
-            error = null;
             if (process == null)
             {
                 error = "Host process is null.";
@@ -406,16 +313,13 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
             int requestId = Interlocked.Increment(ref nextRequestId);
             string requestJson = BuildJsonRpcRequest(requestId, method, paramsJson);
-
-            string writeError;
-            if (!TryWriteRpcMessage(process.StandardInput.BaseStream, requestJson, timeoutMs, out writeError))
+            if (!TryWriteRpcMessage(process.StandardInput.BaseStream, requestJson, timeoutMs, out string writeError))
             {
                 error = method + " write failed: " + writeError;
                 return false;
             }
 
-            string responseJson;
-            if (!TryReadRpcMessage(process.StandardOutput.BaseStream, timeoutMs, out responseJson, out error))
+            if (!TryReadRpcMessage(process.StandardOutput.BaseStream, timeoutMs, out string responseJson, out error))
             {
                 error = method + " read failed: " + error;
                 return false;
@@ -429,8 +333,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return false;
             }
 
-            int responseId;
-            if (!TryReadRpcId(envelope, out responseId))
+            if (!TryReadRpcId(envelope, out int responseId))
             {
                 error = method + " response missing id.";
                 return false;
@@ -443,8 +346,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return false;
             }
 
-            object errorObject;
-            if (envelope.TryGetValue("error", out errorObject) && errorObject != null)
+            if (envelope.TryGetValue("error", out object errorObject) && errorObject != null)
             {
                 error = method + " returned error: " + DescribeRpcError(errorObject);
                 return false;
@@ -469,9 +371,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
 
             byte[] payload = Encoding.UTF8.GetBytes(json);
-            byte[] header = Encoding.ASCII.GetBytes(
-                "Content-Length: " + payload.Length.ToString(CultureInfo.InvariantCulture) + "\r\n\r\n");
-
+            byte[] header = Encoding.ASCII.GetBytes("Content-Length: " + payload.Length.ToString(CultureInfo.InvariantCulture) + "\r\n\r\n");
             Task task = Task.Run(() =>
             {
                 stream.Write(header, 0, header.Length);
@@ -487,7 +387,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
             if (task.IsFaulted)
             {
-                Exception baseException = task.Exception == null ? null : task.Exception.GetBaseException();
+                Exception baseException = task.Exception?.GetBaseException();
                 error = baseException == null ? "RPC write failed." : baseException.Message;
                 return false;
             }
@@ -643,32 +543,30 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return false;
             }
 
-            object idObject;
-            if (!envelope.TryGetValue("id", out idObject) || idObject == null)
+            if (!envelope.TryGetValue("id", out object idObject) || idObject == null)
             {
                 return false;
             }
 
-            if (idObject is long)
+            if (idObject is long v2)
             {
-                id = (int)(long)idObject;
+                id = (int)v2;
                 return true;
             }
 
-            if (idObject is double)
+            if (idObject is double v)
             {
-                id = (int)(double)idObject;
+                id = (int)v;
                 return true;
             }
 
-            if (idObject is int)
+            if (idObject is int v1)
             {
-                id = (int)idObject;
+                id = v1;
                 return true;
             }
 
-            int parsed;
-            if (int.TryParse(idObject.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+            if (int.TryParse(idObject.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
             {
                 id = parsed;
                 return true;
@@ -684,8 +582,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return "unknown error";
             }
 
-            var errorMap = errorObject as Dictionary<string, object>;
-            if (errorMap == null)
+            if (errorObject is not Dictionary<string, object> errorMap)
             {
                 return errorObject.ToString();
             }
@@ -704,12 +601,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         private static string QuoteArgument(string value)
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return "\"\"";
-            }
-
-            return "\"" + value.Replace("\"", "\\\"") + "\"";
+            return string.IsNullOrEmpty(value) ? "\"\"" : "\"" + value.Replace("\"", "\\\"") + "\"";
         }
 
         private static void StartStderrPump(Process process)
@@ -744,7 +636,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
         }
 
-        private static void StopHostProcess(string reason)
+        internal static void StopHostProcess(string reason)
         {
             Process process = null;
             lock (SyncRoot)
@@ -834,29 +726,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             StopHostProcess("editor quitting");
         }
 
-        private static void TryAutoStartHost()
-        {
-            if (autoStartChecked)
-            {
-                EditorApplication.update -= TryAutoStartHost;
-                return;
-            }
-
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-            {
-                return;
-            }
-
-            autoStartChecked = true;
-            EditorApplication.update -= TryAutoStartHost;
-
-            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
-            if (settings.AutoStartHostOnLoad)
-            {
-                StartFullServer();
-            }
-        }
-
         private static void AppendLog(string line)
         {
             string timestamped = "[" + DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "] " + line;
@@ -870,7 +739,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 RecentLogs.Enqueue(timestamped);
             }
 
-            UnityMcpServerWindow.RepaintIfOpen();
+            NotifyStateChanged();
         }
 
         private static void SetStatus(string status)
@@ -884,7 +753,30 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static void SetStatusLocked(string status)
         {
             lastStatus = status;
-            UnityMcpServerWindow.RepaintIfOpen();
+            NotifyStateChanged();
+        }
+
+        private static void NotifyStateChanged()
+        {
+            EditorApplication.delayCall += InvokeStateChanged;
+        }
+
+        private static void InvokeStateChanged()
+        {
+            Action callback = StateChanged;
+            if (callback == null)
+            {
+                return;
+            }
+
+            try
+            {
+                callback();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Unity MCP Host] StateChanged callback failed: " + ex.Message);
+            }
         }
     }
 }

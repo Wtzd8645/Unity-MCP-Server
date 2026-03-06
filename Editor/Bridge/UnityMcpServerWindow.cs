@@ -12,7 +12,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private Vector2 settingsScroll;
         private Vector2 logsScroll;
 
-        [MenuItem("Tools/Unity MCP Bridge/Server Control")]
+        [MenuItem("Tools/Unity MCP Server")]
         public static void ShowWindow()
         {
             window = GetWindow<UnityMcpServerWindow>("Unity MCP Server");
@@ -24,17 +24,20 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         {
             if (window != null)
             {
-                EditorApplication.delayCall += () => window?.Repaint();
+                EditorApplication.delayCall += () => window.Repaint();
             }
         }
 
         private void OnEnable()
         {
             window = this;
+            UnityMcpHostSupervisor.StateChanged -= RepaintIfOpen;
+            UnityMcpHostSupervisor.StateChanged += RepaintIfOpen;
         }
 
         private void OnDisable()
         {
+            UnityMcpHostSupervisor.StateChanged -= RepaintIfOpen;
             if (ReferenceEquals(window, this))
             {
                 window = null;
@@ -102,57 +105,18 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         private static void DrawActionSection()
         {
-            EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
-
-            using (new EditorGUILayout.HorizontalScope())
+            bool isRunning = UnityMcpBridgeServer.IsRunning || UnityMcpHostSupervisor.IsHostRunning;
+            bool toggled = GUILayout.Toggle(isRunning, isRunning ? "Stop Server" : "Start Server", "Button", GUILayout.Height(28f));
+            if (toggled != isRunning)
             {
-                if (GUILayout.Button("Start Full Server", GUILayout.Height(28f)))
+                if (toggled)
                 {
-                    UnityMcpHostSupervisor.StartFullServer();
+                    UnityMcpServerCoordinator.StartServer();
                 }
-
-                if (GUILayout.Button("Stop Full Server", GUILayout.Height(28f)))
+                else
                 {
-                    UnityMcpHostSupervisor.StopFullServer();
+                    UnityMcpServerCoordinator.StopServer("manual stop");
                 }
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUI.BeginDisabledGroup(UnityMcpBridgeServer.IsRunning);
-                if (GUILayout.Button("Start Bridge Only"))
-                {
-                    UnityMcpHostSupervisor.StartBridgeOnly();
-                }
-
-                EditorGUI.EndDisabledGroup();
-
-                EditorGUI.BeginDisabledGroup(!UnityMcpBridgeServer.IsRunning);
-                if (GUILayout.Button("Stop Bridge Only"))
-                {
-                    UnityMcpHostSupervisor.StopBridgeOnly();
-                }
-
-                EditorGUI.EndDisabledGroup();
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUI.BeginDisabledGroup(UnityMcpHostSupervisor.IsHostRunning);
-                if (GUILayout.Button("Start Host Only"))
-                {
-                    UnityMcpHostSupervisor.StartHostOnly();
-                }
-
-                EditorGUI.EndDisabledGroup();
-
-                EditorGUI.BeginDisabledGroup(!UnityMcpHostSupervisor.IsHostRunning);
-                if (GUILayout.Button("Stop Host Only"))
-                {
-                    UnityMcpHostSupervisor.StopHost();
-                }
-
-                EditorGUI.EndDisabledGroup();
             }
         }
 
@@ -160,7 +124,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         {
             EditorGUILayout.LabelField("Host Settings", EditorStyles.boldLabel);
 
-            settingsScroll = EditorGUILayout.BeginScrollView(settingsScroll, GUILayout.MinHeight(260f));
+            settingsScroll = EditorGUILayout.BeginScrollView(settingsScroll, GUILayout.MinHeight(300f));
             EditorGUI.BeginChangeCheck();
 
             string repositoryRootOverride = EditorGUILayout.TextField("Package Root Override", settings.RepositoryRootOverride);
@@ -179,7 +143,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             int startupProbeTimeoutMs = EditorGUILayout.IntField("Startup Probe Timeout (ms)", settings.StartupProbeTimeoutMs);
             string allowedPathPrefixes = EditorGUILayout.TextField("Allowed Path Prefixes", settings.AllowedPathPrefixes);
             string allowedComponentTypes = EditorGUILayout.TextField("Allowed Component Types", settings.AllowedComponentTypes);
-            bool autoStartBridgeWithHost = EditorGUILayout.Toggle("Auto Start Bridge With Host", settings.AutoStartBridgeWithHost);
             bool autoStartHostOnLoad = EditorGUILayout.Toggle("Auto Start Full Server On Load", settings.AutoStartHostOnLoad);
 
             if (EditorGUI.EndChangeCheck())
@@ -195,7 +158,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 settings.StartupProbeTimeoutMs = startupProbeTimeoutMs;
                 settings.AllowedPathPrefixes = allowedPathPrefixes;
                 settings.AllowedComponentTypes = allowedComponentTypes;
-                settings.AutoStartBridgeWithHost = autoStartBridgeWithHost;
                 settings.AutoStartHostOnLoad = autoStartHostOnLoad;
             }
 
@@ -205,8 +167,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             EditorGUILayout.LabelField("Resolved Package Root", resolvedRepoRoot, EditorStyles.miniLabel);
             EditorGUILayout.LabelField("Resolved Host Project", resolvedHostProject, EditorStyles.miniLabel);
 
-            bool hostExists = File.Exists(resolvedHostProject);
-            if (!hostExists)
+            if (!File.Exists(resolvedHostProject))
             {
                 EditorGUILayout.HelpBox(
                     "Host project path does not exist. Update Host Project Path or Package Root Override.",
