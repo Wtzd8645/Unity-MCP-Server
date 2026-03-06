@@ -375,11 +375,26 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
             else if (!string.IsNullOrEmpty(target.path))
             {
-                path = target.path;
+                if (!BridgeWriteSupport.TryNormalizeAssetPath(target.path, out string normalizedPath, out _))
+                {
+                    return false;
+                }
+
+                path = normalizedPath;
                 guid = AssetDatabase.AssetPathToGUID(path);
             }
 
-            return !string.IsNullOrEmpty(path);
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+
+            if (!BridgeWriteSupport.TryValidateAssetPathAllowed(path, out _))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static AssetGetAsset BuildAssetGetAsset(string path, string guid)

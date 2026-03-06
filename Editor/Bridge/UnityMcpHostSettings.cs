@@ -12,7 +12,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
     {
         private const string DefaultDotnetExecutable = "dotnet";
         private const string DefaultHostProjectRelativePath = "Editor/Host~/UnityMcpServer.Host.csproj";
-        private const string PackageName = "com.blanketmen.unity-mcp.server";
+        private const string PackageName = "com.blanketmen.unity-mcp-server";
         private const string DefaultBridgeTransport = "http";
         private const string DefaultBridgeHttpUrl = "http://127.0.0.1:38100/";
         private const string DefaultBridgePipeName = "unity-mcp-bridge";

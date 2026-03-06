@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -131,19 +132,18 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         public static bool TryValidateAssetPathAllowed(string path, out string error)
         {
-            error = null;
-            if (string.IsNullOrEmpty(path))
+            if (!TryNormalizeAssetPath(path, out string normalized, out error))
             {
-                error = "Asset path is required.";
                 return false;
             }
 
-            string normalized = path.Replace('\\', '/');
             string[] prefixes = GetAllowedPathPrefixes();
             for (int i = 0; i < prefixes.Length; i++)
             {
                 string prefix = prefixes[i];
-                if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                string prefixRoot = prefix.TrimEnd('/');
+                if (string.Equals(normalized, prefixRoot, StringComparison.OrdinalIgnoreCase) ||
+                    normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -155,19 +155,18 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         public static bool TryValidateFolderPath(string folderPath, out string error)
         {
-            if (string.IsNullOrEmpty(folderPath))
-            {
-                error = "Folder path is required.";
-                return false;
-            }
-
-            if (!TryValidateAssetPathAllowed(folderPath, out error))
+            if (!TryNormalizeAssetPath(folderPath, out string normalizedFolder, out error))
             {
                 return false;
             }
 
-            string[] parts = folderPath.Split('/');
-            if (parts.Length == 0 || parts[0] != "Assets")
+            if (!TryValidateAssetPathAllowed(normalizedFolder, out error))
+            {
+                return false;
+            }
+
+            if (!string.Equals(normalizedFolder, "Assets", StringComparison.OrdinalIgnoreCase) &&
+                !normalizedFolder.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
             {
                 error = "Folder path must start with Assets/.";
                 return false;
@@ -638,17 +637,22 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         public static bool EnsureFolderPathExists(string folderPath, out string error)
         {
-            if (!TryValidateFolderPath(folderPath, out error))
+            if (!TryNormalizeAssetPath(folderPath, out string normalizedFolder, out error))
             {
                 return false;
             }
 
-            if (AssetDatabase.IsValidFolder(folderPath))
+            if (!TryValidateFolderPath(normalizedFolder, out error))
+            {
+                return false;
+            }
+
+            if (AssetDatabase.IsValidFolder(normalizedFolder))
             {
                 return true;
             }
 
-            string[] parts = folderPath.Split('/');
+            string[] parts = normalizedFolder.Split('/');
             string current = "Assets";
             for (int i = 1; i < parts.Length; i++)
             {
@@ -670,6 +674,74 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
 
             return true;
+        }
+        public static bool TryNormalizeAssetPath(string path, out string normalizedPath, out string error)
+        {
+            normalizedPath = null;
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                error = "Asset path is required.";
+                return false;
+            }
+
+            string candidate = path.Trim().Replace('\\', '/');
+            while (candidate.StartsWith("./", StringComparison.Ordinal))
+            {
+                candidate = candidate.Substring(2);
+            }
+
+            if (Path.IsPathRooted(candidate) || candidate.StartsWith("/", StringComparison.Ordinal))
+            {
+                error = "Asset path must be project-relative.";
+                return false;
+            }
+
+            string projectRoot;
+            string absoluteCandidate;
+            try
+            {
+                projectRoot = Path.GetFullPath(BridgeUtil.GetProjectRootPath());
+                absoluteCandidate = Path.GetFullPath(Path.Combine(projectRoot, candidate.Replace('/', Path.DirectorySeparatorChar)));
+            }
+            catch (Exception ex)
+            {
+                error = "Invalid asset path: " + ex.Message;
+                return false;
+            }
+
+            if (!IsPathWithinRoot(projectRoot, absoluteCandidate))
+            {
+                error = "Path escapes project root: " + candidate;
+                return false;
+            }
+
+            string normalizedRoot = projectRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string relative = absoluteCandidate.Substring(normalizedRoot.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .Replace('\\', '/');
+            if (string.IsNullOrEmpty(relative))
+            {
+                error = "Asset path must resolve to a project-relative path.";
+                return false;
+            }
+
+            normalizedPath = relative;
+            return true;
+        }
+
+        private static bool IsPathWithinRoot(string rootPath, string candidatePath)
+        {
+            string normalizedRoot = rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string normalizedCandidate = candidatePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(normalizedCandidate, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            string rootWithSeparator = normalizedRoot + Path.DirectorySeparatorChar;
+            return normalizedCandidate.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase);
         }
         private static Dictionary<string, object> ParseRootObject(string rawJson)
         {
