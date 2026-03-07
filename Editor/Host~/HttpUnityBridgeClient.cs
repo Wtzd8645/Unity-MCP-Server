@@ -7,8 +7,8 @@ namespace Blanketmen.UnityMcpServer.Host;
 
 public sealed class HttpUnityBridgeClient : IUnityBridgeClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly int _timeoutMs;
+    private readonly HttpClient httpClient;
+    private readonly int timeoutMs;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -16,8 +16,8 @@ public sealed class HttpUnityBridgeClient : IUnityBridgeClient
 
     public HttpUnityBridgeClient(Uri baseUri, int timeoutMs)
     {
-        _timeoutMs = timeoutMs;
-        _httpClient = new HttpClient
+        this.timeoutMs = timeoutMs;
+        httpClient = new HttpClient
         {
             BaseAddress = baseUri,
         };
@@ -36,12 +36,12 @@ public sealed class HttpUnityBridgeClient : IUnityBridgeClient
         };
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(timeoutMsOverride ?? _timeoutMs);
+        timeoutCts.CancelAfter(timeoutMsOverride ?? timeoutMs);
 
         HttpResponseMessage response;
         try
         {
-            response = await _httpClient.PostAsJsonAsync(
+            response = await httpClient.PostAsJsonAsync(
                 "mcp/tool/call",
                 request,
                 JsonOptions,
@@ -99,21 +99,13 @@ public sealed class HttpUnityBridgeClient : IUnityBridgeClient
 
     private static JsonNode? ParseStructuredContent(string? rawJson)
     {
-        if (string.IsNullOrWhiteSpace(rawJson))
-        {
-            return null;
-        }
-
         try
         {
-            return JsonNode.Parse(rawJson);
+            return string.IsNullOrWhiteSpace(rawJson) ? null : JsonNode.Parse(rawJson);
         }
         catch
         {
-            return new JsonObject
-            {
-                ["raw"] = rawJson,
-            };
+            return new JsonObject { ["raw"] = rawJson, };
         }
     }
 }
@@ -130,5 +122,3 @@ public sealed class UnityBridgeToolCallResponse
     public string? ContentText { get; set; }
     public string? StructuredContentJson { get; set; }
 }
-
-

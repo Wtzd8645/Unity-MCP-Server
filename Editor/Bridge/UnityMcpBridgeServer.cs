@@ -28,23 +28,48 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static HttpListener httpListener;
         private static Thread httpThread;
         private static Thread pipeThread;
+        private static bool autoStartChecked;
 
         public static bool IsRunning { get; private set; }
 
         static UnityMcpBridgeServer()
         {
             EditorApplication.update += FlushMainThreadActions;
+            EditorApplication.update += TryAutoStartBridge;
             EditorApplication.quitting += OnEditorQuitting;
             AssemblyReloadEvents.beforeAssemblyReload += StopInternal;
             Application.logMessageReceivedThreaded += OnUnityLogReceived;
             IsRunning = false;
         }
 
+        private static void TryAutoStartBridge()
+        {
+            if (autoStartChecked)
+            {
+                EditorApplication.update -= TryAutoStartBridge;
+                return;
+            }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            autoStartChecked = true;
+            EditorApplication.update -= TryAutoStartBridge;
+
+            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
+            if (settings.AutoStartHostOnLoad)
+            {
+                Start();
+            }
+        }
+
         public static void Start()
         {
             if (IsRunning)
             {
-                Debug.Log("[Unity MCP Bridge] Already running.");
+                Debug.Log("[UnityMcpBridge] Already running.");
                 return;
             }
 
@@ -56,12 +81,12 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             if (string.Equals(transport, "pipe", StringComparison.OrdinalIgnoreCase))
             {
                 StartPipeServer();
-                Debug.Log("[Unity MCP Bridge] Started. Pipe=" + pipeName);
+                Debug.Log($"[UnityMcpBridge] Started. Pipe: {pipeName}");
             }
             else
             {
                 StartHttpServer();
-                Debug.Log("[Unity MCP Bridge] Started. HTTP=" + httpPrefix);
+                Debug.Log($"[UnityMcpBridge] Started. HTTP: {httpPrefix}");
             }
         }
 
@@ -70,7 +95,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             if (IsRunning)
             {
                 StopInternal();
-                Debug.Log("[Unity MCP Bridge] Stopped.");
+                Debug.Log("[UnityMcpBridge] Stopped.");
             }
         }
 
@@ -104,7 +129,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
             catch (Exception ex)
             {
-                Debug.LogError("[Unity MCP Bridge] HTTP start failed: " + ex.Message);
+                Debug.LogError("[UnityMcpBridge] HTTP start failed: " + ex.Message);
             }
         }
 
@@ -121,7 +146,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[Unity MCP Bridge] HTTP stop failed: " + ex.Message);
+                Debug.LogWarning("[UnityMcpBridge] HTTP stop failed: " + ex.Message);
             }
         }
 
@@ -146,7 +171,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 {
                     if (IsRunning)
                     {
-                        Debug.LogWarning("[Unity MCP Bridge] HTTP accept failed: " + ex.Message);
+                        Debug.LogWarning("[UnityMcpBridge] HTTP accept failed: " + ex.Message);
                     }
 
                     continue;
@@ -158,7 +183,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning("[Unity MCP Bridge] HTTP request failed: " + ex.Message);
+                    Debug.LogWarning("[UnityMcpBridge] HTTP request failed: " + ex.Message);
                     var errorResponse = BridgeResponses.Error("Internal bridge error.", "internal_error", null);
                     TryWriteHttpResponse(context, 500, JsonUtility.ToJson(errorResponse));
                 }
@@ -226,7 +251,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[Unity MCP Bridge] HTTP response write failed: " + ex.Message);
+                Debug.LogWarning("[UnityMcpBridge] HTTP response write failed: " + ex.Message);
             }
         }
 
@@ -262,7 +287,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[Unity MCP Bridge] Pipe server create failed: " + ex.Message);
+                Debug.LogWarning("[UnityMcpBridge] Pipe server create failed: " + ex.Message);
                 return;
             }
 
@@ -322,7 +347,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                     {
                         if (IsRunning)
                         {
-                            Debug.LogWarning("[Unity MCP Bridge] Pipe loop failed: " + ex.Message);
+                            Debug.LogWarning("[UnityMcpBridge] Pipe loop failed: " + ex.Message);
                         }
 
                         if (server.IsConnected)
@@ -350,7 +375,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning("[Unity MCP Bridge] Main-thread action failed: " + ex.Message);
+                    Debug.LogWarning($"[UnityMcpBridge] Main-thread action failed: {ex.Message}");
                 }
             }
         }
@@ -419,13 +444,23 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static string ResolveTransport()
         {
             string transport = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_TRANSPORT");
+            if (string.IsNullOrWhiteSpace(transport))
+            {
+                transport = UnityMcpHostSettings.GetOrCreate().BridgeTransport;
+            }
+
             return string.Equals(transport, "pipe", StringComparison.OrdinalIgnoreCase) ? "pipe" : "http";
         }
 
         private static string ResolveHttpPrefix()
         {
             string envUrl = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_HTTP_URL");
-            if (string.IsNullOrEmpty(envUrl))
+            if (string.IsNullOrWhiteSpace(envUrl))
+            {
+                envUrl = UnityMcpHostSettings.GetOrCreate().BridgeHttpUrl;
+            }
+
+            if (string.IsNullOrWhiteSpace(envUrl))
             {
                 return DefaultHttpPrefix;
             }
@@ -441,7 +476,12 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static string ResolvePipeName()
         {
             string envName = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_PIPE_NAME");
-            return string.IsNullOrEmpty(envName) ? DefaultPipeName : envName;
+            if (string.IsNullOrWhiteSpace(envName))
+            {
+                envName = UnityMcpHostSettings.GetOrCreate().BridgePipeName;
+            }
+
+            return string.IsNullOrWhiteSpace(envName) ? DefaultPipeName : envName;
         }
 
         private static bool TryInvokeOnMainThread(Action action, int timeoutMs, out string error)
@@ -489,3 +529,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+

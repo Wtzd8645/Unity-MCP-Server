@@ -15,5 +15,3 @@ public sealed record BridgeToolCallResult(
     bool IsError,
     string ContentText,
     JsonNode? StructuredContent);
-
-

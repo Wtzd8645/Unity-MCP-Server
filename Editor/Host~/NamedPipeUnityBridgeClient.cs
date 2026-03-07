@@ -9,6 +9,7 @@ public sealed class NamedPipeUnityBridgeClient : IUnityBridgeClient
 {
     private readonly string _pipeName;
     private readonly int _timeoutMs;
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public NamedPipeUnityBridgeClient(string pipeName, int timeoutMs)
     {
@@ -48,7 +49,7 @@ public sealed class NamedPipeUnityBridgeClient : IUnityBridgeClient
             };
             using var reader = new StreamReader(pipe, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, 1024, leaveOpen: true);
 
-            string serializedRequest = JsonSerializer.Serialize(request);
+            string serializedRequest = JsonSerializer.Serialize(request, JsonOptions);
             await writer.WriteLineAsync(serializedRequest);
 
             Task<string?> readTask = reader.ReadLineAsync();
@@ -67,7 +68,7 @@ public sealed class NamedPipeUnityBridgeClient : IUnityBridgeClient
             }
 
             UnityBridgeToolCallResponse? response =
-                JsonSerializer.Deserialize<UnityBridgeToolCallResponse>(rawResponse);
+                JsonSerializer.Deserialize<UnityBridgeToolCallResponse>(rawResponse, JsonOptions);
 
             if (response is null)
             {
@@ -121,5 +122,6 @@ public sealed class NamedPipeUnityBridgeClient : IUnityBridgeClient
         }
     }
 }
+
 
 

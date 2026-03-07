@@ -181,6 +181,11 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             string raw = Environment.GetEnvironmentVariable(AllowedPathPrefixesEnv);
             if (string.IsNullOrWhiteSpace(raw))
             {
+                raw = UnityMcpHostSettings.GetOrCreate().AllowedPathPrefixes;
+            }
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
                 return new[] { "Assets/" };
             }
 
@@ -198,6 +203,11 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static string[] GetAllowedComponentPatterns()
         {
             string raw = Environment.GetEnvironmentVariable(AllowedComponentTypesEnv);
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                raw = UnityMcpHostSettings.GetOrCreate().AllowedComponentTypes;
+            }
+
             if (string.IsNullOrWhiteSpace(raw))
             {
                 return new[] { "*" };
@@ -1266,3 +1276,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+
