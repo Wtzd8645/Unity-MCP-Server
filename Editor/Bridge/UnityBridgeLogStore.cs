@@ -56,19 +56,14 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         private static string MapLogType(LogType type)
         {
-            switch (type)
+            return type switch
             {
-                case LogType.Warning:
-                    return "warning";
-                case LogType.Error:
-                    return "error";
-                case LogType.Exception:
-                    return "exception";
-                case LogType.Assert:
-                    return "assert";
-                default:
-                    return "log";
-            }
+                LogType.Warning => "warning",
+                LogType.Error => "error",
+                LogType.Exception => "exception",
+                LogType.Assert => "assert",
+                _ => "log",
+            };
         }
     }
 

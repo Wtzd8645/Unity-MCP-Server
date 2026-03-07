@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.get_console_logs",
+      "name": "unity_get_console_logs",
       "description": "Read Unity Console messages with incremental polling.",
       "inputSchema": {
         "type": "object",
@@ -247,7 +247,7 @@
       }
     },
     {
-      "name": "unity.clear_console",
+      "name": "unity_clear_console",
       "description": "Clear Unity Console.",
       "inputSchema": {
         "type": "object",
@@ -256,7 +256,7 @@
       }
     },
     {
-      "name": "unity.run_tests",
+      "name": "unity_run_tests",
       "description": "Run Unity Test Framework tests (defaults to EditMode).",
       "inputSchema": {
         "type": "object",
@@ -316,3 +316,4 @@
     }
   ]
 }
+

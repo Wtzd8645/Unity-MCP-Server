@@ -25,7 +25,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 },
             };
 
-            return BridgeResponses.Success("unity.ping handled by Unity bridge.", payload);
+            return BridgeResponses.Success("unity_ping handled by Unity bridge.", payload);
         }
 
         public static BridgeToolCallResponse HandleProjectInfo(BridgeToolCallRequest request)
@@ -56,7 +56,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 payload.supportedBuildTargets = Enum.GetNames(typeof(BuildTarget));
             }
 
-            return BridgeResponses.Success("unity.project_info completed.", payload);
+            return BridgeResponses.Success("unity_project_info completed.", payload);
         }
 
         public static BridgeToolCallResponse HandlePlaymodeStatus()
@@ -68,7 +68,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 isChangingPlaymode = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying,
             };
 
-            return BridgeResponses.Success("unity.playmode_status completed.", payload);
+            return BridgeResponses.Success("unity_playmode_status completed.", payload);
         }
 
         public static BridgeToolCallResponse HandlePlaymodeStart(
@@ -157,7 +157,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 timeoutMs = timeoutMs,
             };
 
-            return BridgeResponses.Success("unity.playmode_start completed.", payload);
+            return BridgeResponses.Success("unity_playmode_start completed.", payload);
         }
 
         public static BridgeToolCallResponse HandlePlaymodeStop(
@@ -246,7 +246,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 timeoutMs = timeoutMs,
             };
 
-            return BridgeResponses.Success("unity.playmode_stop completed.", payload);
+            return BridgeResponses.Success("unity_playmode_stop completed.", payload);
         }
 
         private static bool TryQueryPlaymodeState(
@@ -311,3 +311,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+

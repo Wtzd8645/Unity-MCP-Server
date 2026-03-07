@@ -382,9 +382,9 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
         private static BridgeToolCallResponse ExecuteOnMainThreadWithTimeout(BridgeToolCallRequest request, int timeoutMs)
         {
-            if (string.Equals(request.name, "unity.run_tests", StringComparison.Ordinal) ||
-                string.Equals(request.name, "unity.playmode_start", StringComparison.Ordinal) ||
-                string.Equals(request.name, "unity.playmode_stop", StringComparison.Ordinal))
+            if (string.Equals(request.name, "unity_run_tests", StringComparison.Ordinal) ||
+                string.Equals(request.name, "unity_playmode_start", StringComparison.Ordinal) ||
+                string.Equals(request.name, "unity_playmode_stop", StringComparison.Ordinal))
             {
                 try
                 {
@@ -526,3 +526,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+

@@ -4,9 +4,11 @@ using System.Text.Json.Nodes;
 
 namespace Blanketmen.UnityMcpServer.Host;
 
+// MCP stdio transport uses newline-delimited JSON (NDJSON): one JSON object per line.
+// See: https://spec.modelcontextprotocol.io/specification/basic/transports/#stdio
 public sealed class StdioJsonRpcTransport
 {
-    private readonly Stream _input;
+    private readonly StreamReader _reader;
     private readonly Stream _output;
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -15,51 +17,28 @@ public sealed class StdioJsonRpcTransport
 
     public StdioJsonRpcTransport(Stream input, Stream output)
     {
-        _input = input;
+        _reader = new StreamReader(input, Encoding.UTF8);
         _output = output;
     }
 
     public async Task<JsonObject?> ReadMessageAsync(CancellationToken cancellationToken)
     {
-        int? contentLength = null;
-
         while (true)
         {
-            string? line = await ReadHeaderLineAsync(cancellationToken);
+            string? line = await _reader.ReadLineAsync(cancellationToken);
             if (line is null)
             {
                 return null;
             }
 
-            if (line.Length == 0)
-            {
-                break;
-            }
-
-            int colonIndex = line.IndexOf(':');
-            if (colonIndex <= 0)
+            if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
             }
 
-            string key = line[..colonIndex].Trim();
-            string value = line[(colonIndex + 1)..].Trim();
-            if (key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) &&
-                int.TryParse(value, out int parsedLength))
-            {
-                contentLength = parsedLength;
-            }
+            JsonNode? parsed = JsonNode.Parse(line);
+            return parsed as JsonObject;
         }
-
-        if (contentLength is null || contentLength <= 0)
-        {
-            return null;
-        }
-
-        byte[] payload = await ReadExactBytesAsync(contentLength.Value, cancellationToken);
-        string json = Encoding.UTF8.GetString(payload);
-        JsonNode? parsed = JsonNode.Parse(json);
-        return parsed as JsonObject;
     }
 
     public Task WriteResultAsync(JsonNode? id, JsonObject result, CancellationToken cancellationToken)
@@ -104,64 +83,10 @@ public sealed class StdioJsonRpcTransport
     private async Task WriteMessageAsync(JsonObject message, CancellationToken cancellationToken)
     {
         string json = message.ToJsonString(SerializerOptions);
-        byte[] payloadBytes = Encoding.UTF8.GetBytes(json);
-        string header = $"Content-Length: {payloadBytes.Length}\r\n\r\n";
-        byte[] headerBytes = Encoding.ASCII.GetBytes(header);
+        byte[] payloadBytes = Encoding.UTF8.GetBytes(json + "\n");
 
-        await _output.WriteAsync(headerBytes.AsMemory(0, headerBytes.Length), cancellationToken);
         await _output.WriteAsync(payloadBytes.AsMemory(0, payloadBytes.Length), cancellationToken);
         await _output.FlushAsync(cancellationToken);
-    }
-
-    private async Task<byte[]> ReadExactBytesAsync(int contentLength, CancellationToken cancellationToken)
-    {
-        byte[] buffer = new byte[contentLength];
-        int offset = 0;
-
-        while (offset < contentLength)
-        {
-            int read = await _input.ReadAsync(
-                buffer.AsMemory(offset, contentLength - offset),
-                cancellationToken);
-
-            if (read == 0)
-            {
-                throw new EndOfStreamException("Unexpected end of stream while reading payload.");
-            }
-
-            offset += read;
-        }
-
-        return buffer;
-    }
-
-    private async Task<string?> ReadHeaderLineAsync(CancellationToken cancellationToken)
-    {
-        var bytes = new List<byte>(64);
-        var one = new byte[1];
-
-        while (true)
-        {
-            int read = await _input.ReadAsync(one.AsMemory(0, 1), cancellationToken);
-            if (read == 0)
-            {
-                return bytes.Count == 0 ? null : Encoding.ASCII.GetString(bytes.ToArray());
-            }
-
-            if (one[0] == (byte)'\n')
-            {
-                break;
-            }
-
-            bytes.Add(one[0]);
-        }
-
-        if (bytes.Count > 0 && bytes[^1] == (byte)'\r')
-        {
-            bytes.RemoveAt(bytes.Count - 1);
-        }
-
-        return Encoding.ASCII.GetString(bytes.ToArray());
     }
 }
 

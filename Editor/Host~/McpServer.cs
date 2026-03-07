@@ -236,7 +236,7 @@ public sealed class McpServer
 
     private static int? ResolveBridgeTimeoutOverride(string toolName, JsonObject arguments)
     {
-        if (string.Equals(toolName, "unity.run_tests", StringComparison.Ordinal))
+        if (string.Equals(toolName, "unity_run_tests", StringComparison.Ordinal))
         {
             int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 600000);
             timeoutMs = Math.Clamp(timeoutMs, 5000, 3600000);
@@ -244,8 +244,8 @@ public sealed class McpServer
             return Math.Clamp(bridgeTimeout, 5000, 3900000);
         }
 
-        if (string.Equals(toolName, "unity.playmode_start", StringComparison.Ordinal) ||
-            string.Equals(toolName, "unity.playmode_stop", StringComparison.Ordinal))
+        if (string.Equals(toolName, "unity_playmode_start", StringComparison.Ordinal) ||
+            string.Equals(toolName, "unity_playmode_stop", StringComparison.Ordinal))
         {
             int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 15000);
             timeoutMs = Math.Clamp(timeoutMs, 1000, 120000);
@@ -275,6 +275,9 @@ public sealed class McpServer
         return timeoutMs;
     }
 }
+
+
+
 
 
 

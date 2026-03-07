@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.list_scenes",
+      "name": "unity_list_scenes",
       "description": "List scenes from Build Settings and/or project assets.",
       "inputSchema": {
         "type": "object",
@@ -235,7 +235,7 @@
       }
     },
     {
-      "name": "unity.open_scene",
+      "name": "unity_open_scene",
       "description": "Open a scene in Editor.",
       "inputSchema": {
         "type": "object",
@@ -268,7 +268,7 @@
       }
     },
     {
-      "name": "unity.go_find",
+      "name": "unity_go_find",
       "description": "Find scene objects by conditions.",
       "inputSchema": {
         "type": "object",
@@ -323,7 +323,7 @@
       }
     },
     {
-      "name": "unity.component_get_fields",
+      "name": "unity_component_get_fields",
       "description": "Read serialized fields from a component.",
       "inputSchema": {
         "type": "object",
@@ -352,3 +352,4 @@
     }
   ]
 }
+

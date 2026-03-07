@@ -8,11 +8,11 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity.ping",
-        "unity.project_info",
-        "unity.playmode_status",
-        "unity.playmode_start",
-        "unity.playmode_stop"
+        "unity_ping",
+        "unity_project_info",
+        "unity_playmode_status",
+        "unity_playmode_start",
+        "unity_playmode_stop"
       ]
     },
     {
@@ -20,9 +20,9 @@
       "risk": "low-medium",
       "enabledByDefault": true,
       "tools": [
-        "unity.get_console_logs",
-        "unity.clear_console",
-        "unity.run_tests"
+        "unity_get_console_logs",
+        "unity_clear_console",
+        "unity_run_tests"
       ]
     },
     {
@@ -30,10 +30,10 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity.list_scenes",
-        "unity.open_scene",
-        "unity.go_find",
-        "unity.component_get_fields"
+        "unity_list_scenes",
+        "unity_open_scene",
+        "unity_go_find",
+        "unity_component_get_fields"
       ]
     },
     {
@@ -41,15 +41,15 @@
       "risk": "medium",
       "enabledByDefault": false,
       "tools": [
-        "unity.go_create",
-        "unity.go_delete",
-        "unity.go_duplicate",
-        "unity.go_reparent",
-        "unity.go_rename",
-        "unity.go_set_active",
-        "unity.component_add",
-        "unity.component_remove",
-        "unity.component_set_fields"
+        "unity_go_create",
+        "unity_go_delete",
+        "unity_go_duplicate",
+        "unity_go_reparent",
+        "unity_go_rename",
+        "unity_go_set_active",
+        "unity_component_add",
+        "unity_component_remove",
+        "unity_component_set_fields"
       ]
     },
     {
@@ -57,12 +57,12 @@
       "risk": "medium-high",
       "enabledByDefault": false,
       "tools": [
-        "unity.prefab_create",
-        "unity.prefab_instantiate",
-        "unity.prefab_apply_overrides",
-        "unity.prefab_revert_overrides",
-        "unity.prefab_unpack",
-        "unity.prefab_create_variant"
+        "unity_prefab_create",
+        "unity_prefab_instantiate",
+        "unity_prefab_apply_overrides",
+        "unity_prefab_revert_overrides",
+        "unity_prefab_unpack",
+        "unity_prefab_create_variant"
       ]
     },
     {
@@ -70,9 +70,9 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity.asset_search",
-        "unity.asset_get",
-        "unity.asset_refs"
+        "unity_asset_search",
+        "unity_asset_get",
+        "unity_asset_refs"
       ]
     },
     {
@@ -80,12 +80,13 @@
       "risk": "high",
       "enabledByDefault": false,
       "tools": [
-        "unity.asset_move",
-        "unity.asset_rename",
-        "unity.asset_delete_to_trash",
-        "unity.asset_reimport",
-        "unity.asset_set_labels"
+        "unity_asset_move",
+        "unity_asset_rename",
+        "unity_asset_delete_to_trash",
+        "unity_asset_reimport",
+        "unity_asset_set_labels"
       ]
     }
   ]
 }
+

@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.prefab_create",
+      "name": "unity_prefab_create",
       "description": "Save a scene object as a prefab.",
       "inputSchema": {
         "type": "object",
@@ -242,7 +242,7 @@
       }
     },
     {
-      "name": "unity.prefab_instantiate",
+      "name": "unity_prefab_instantiate",
       "description": "Instantiate a prefab into a scene.",
       "inputSchema": {
         "type": "object",
@@ -280,7 +280,7 @@
       }
     },
     {
-      "name": "unity.prefab_apply_overrides",
+      "name": "unity_prefab_apply_overrides",
       "description": "Apply prefab overrides from instances to source prefabs.",
       "inputSchema": {
         "type": "object",
@@ -325,7 +325,7 @@
       }
     },
     {
-      "name": "unity.prefab_revert_overrides",
+      "name": "unity_prefab_revert_overrides",
       "description": "Revert prefab overrides on instances.",
       "inputSchema": {
         "type": "object",
@@ -370,7 +370,7 @@
       }
     },
     {
-      "name": "unity.prefab_unpack",
+      "name": "unity_prefab_unpack",
       "description": "Unpack prefab instances.",
       "inputSchema": {
         "type": "object",
@@ -411,7 +411,7 @@
       }
     },
     {
-      "name": "unity.prefab_create_variant",
+      "name": "unity_prefab_create_variant",
       "description": "Create a prefab variant from base prefab (optionally using instance overrides).",
       "inputSchema": {
         "type": "object",
@@ -452,3 +452,4 @@
     }
   ]
 }
+

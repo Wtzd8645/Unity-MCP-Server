@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.ping",
+      "name": "unity_ping",
       "description": "Verify bridge connectivity and editor heartbeat.",
       "inputSchema": {
         "type": "object",
@@ -210,7 +210,7 @@
       }
     },
     {
-      "name": "unity.project_info",
+      "name": "unity_project_info",
       "description": "Return project/runtime/editor basics.",
       "inputSchema": {
         "type": "object",
@@ -224,7 +224,7 @@
       }
     },
     {
-      "name": "unity.playmode_status",
+      "name": "unity_playmode_status",
       "description": "Query play mode runtime state.",
       "inputSchema": {
         "type": "object",
@@ -233,7 +233,7 @@
       }
     },
     {
-      "name": "unity.playmode_start",
+      "name": "unity_playmode_start",
       "description": "Enter play mode and optionally wait until state transition completes.",
       "inputSchema": {
         "type": "object",
@@ -253,7 +253,7 @@
       }
     },
     {
-      "name": "unity.playmode_stop",
+      "name": "unity_playmode_stop",
       "description": "Exit play mode and optionally wait until complete.",
       "inputSchema": {
         "type": "object",
@@ -274,3 +274,4 @@
     }
   ]
 }
+

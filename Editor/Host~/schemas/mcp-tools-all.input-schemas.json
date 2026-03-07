@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.ping",
+      "name": "unity_ping",
       "description": "Verify bridge connectivity and editor heartbeat.",
       "inputSchema": {
         "type": "object",
@@ -210,7 +210,7 @@
       }
     },
     {
-      "name": "unity.project_info",
+      "name": "unity_project_info",
       "description": "Return project/runtime/editor basics.",
       "inputSchema": {
         "type": "object",
@@ -224,7 +224,7 @@
       }
     },
     {
-      "name": "unity.list_scenes",
+      "name": "unity_list_scenes",
       "description": "List scenes from Build Settings and/or project assets.",
       "inputSchema": {
         "type": "object",
@@ -258,7 +258,7 @@
       }
     },
     {
-      "name": "unity.open_scene",
+      "name": "unity_open_scene",
       "description": "Open a scene in Editor.",
       "inputSchema": {
         "type": "object",
@@ -291,7 +291,7 @@
       }
     },
     {
-      "name": "unity.playmode_status",
+      "name": "unity_playmode_status",
       "description": "Query play mode runtime state.",
       "inputSchema": {
         "type": "object",
@@ -300,7 +300,7 @@
       }
     },
     {
-      "name": "unity.playmode_start",
+      "name": "unity_playmode_start",
       "description": "Enter play mode and optionally wait until state transition completes.",
       "inputSchema": {
         "type": "object",
@@ -320,7 +320,7 @@
       }
     },
     {
-      "name": "unity.playmode_stop",
+      "name": "unity_playmode_stop",
       "description": "Exit play mode and optionally wait until complete.",
       "inputSchema": {
         "type": "object",
@@ -340,7 +340,7 @@
       }
     },
     {
-      "name": "unity.get_console_logs",
+      "name": "unity_get_console_logs",
       "description": "Read Unity Console messages with incremental polling.",
       "inputSchema": {
         "type": "object",
@@ -386,7 +386,7 @@
       }
     },
     {
-      "name": "unity.clear_console",
+      "name": "unity_clear_console",
       "description": "Clear Unity Console.",
       "inputSchema": {
         "type": "object",
@@ -395,7 +395,7 @@
       }
     },
     {
-      "name": "unity.run_tests",
+      "name": "unity_run_tests",
       "description": "Run Unity Test Framework tests (defaults to EditMode).",
       "inputSchema": {
         "type": "object",
@@ -454,7 +454,7 @@
       }
     },
     {
-      "name": "unity.asset_search",
+      "name": "unity_asset_search",
       "description": "Search assets by type/name/label/path.",
       "inputSchema": {
         "type": "object",
@@ -524,7 +524,7 @@
       }
     },
     {
-      "name": "unity.asset_get",
+      "name": "unity_asset_get",
       "description": "Read one asset's metadata and optional graph info.",
       "inputSchema": {
         "type": "object",
@@ -552,7 +552,7 @@
       }
     },
     {
-      "name": "unity.asset_refs",
+      "name": "unity_asset_refs",
       "description": "Traverse references for one asset.",
       "inputSchema": {
         "type": "object",
@@ -592,7 +592,7 @@
       }
     },
     {
-      "name": "unity.go_find",
+      "name": "unity_go_find",
       "description": "Find scene objects by conditions.",
       "inputSchema": {
         "type": "object",
@@ -647,7 +647,7 @@
       }
     },
     {
-      "name": "unity.go_create",
+      "name": "unity_go_create",
       "description": "Create a new GameObject.",
       "inputSchema": {
         "type": "object",
@@ -706,7 +706,7 @@
       }
     },
     {
-      "name": "unity.go_delete",
+      "name": "unity_go_delete",
       "description": "Delete one or many GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -747,7 +747,7 @@
       }
     },
     {
-      "name": "unity.go_duplicate",
+      "name": "unity_go_duplicate",
       "description": "Duplicate one or many GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -787,7 +787,7 @@
       }
     },
     {
-      "name": "unity.go_reparent",
+      "name": "unity_go_reparent",
       "description": "Move objects under a new parent (or scene root).",
       "inputSchema": {
         "type": "object",
@@ -827,7 +827,7 @@
       }
     },
     {
-      "name": "unity.go_rename",
+      "name": "unity_go_rename",
       "description": "Rename a GameObject.",
       "inputSchema": {
         "type": "object",
@@ -861,7 +861,7 @@
       }
     },
     {
-      "name": "unity.go_set_active",
+      "name": "unity_go_set_active",
       "description": "Set active state for GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -898,7 +898,7 @@
       }
     },
     {
-      "name": "unity.component_add",
+      "name": "unity_component_add",
       "description": "Add a component to a GameObject.",
       "inputSchema": {
         "type": "object",
@@ -936,7 +936,7 @@
       }
     },
     {
-      "name": "unity.component_remove",
+      "name": "unity_component_remove",
       "description": "Remove one component from a GameObject by type or component id.",
       "inputSchema": {
         "type": "object",
@@ -987,7 +987,7 @@
       }
     },
     {
-      "name": "unity.component_get_fields",
+      "name": "unity_component_get_fields",
       "description": "Read serialized fields from a component.",
       "inputSchema": {
         "type": "object",
@@ -1015,7 +1015,7 @@
       }
     },
     {
-      "name": "unity.component_set_fields",
+      "name": "unity_component_set_fields",
       "description": "Set serialized fields on a component.",
       "inputSchema": {
         "type": "object",
@@ -1062,7 +1062,7 @@
       }
     },
     {
-      "name": "unity.prefab_create",
+      "name": "unity_prefab_create",
       "description": "Save a scene object as a prefab.",
       "inputSchema": {
         "type": "object",
@@ -1103,7 +1103,7 @@
       }
     },
     {
-      "name": "unity.prefab_instantiate",
+      "name": "unity_prefab_instantiate",
       "description": "Instantiate a prefab into a scene.",
       "inputSchema": {
         "type": "object",
@@ -1141,7 +1141,7 @@
       }
     },
     {
-      "name": "unity.prefab_apply_overrides",
+      "name": "unity_prefab_apply_overrides",
       "description": "Apply prefab overrides from instances to source prefabs.",
       "inputSchema": {
         "type": "object",
@@ -1186,7 +1186,7 @@
       }
     },
     {
-      "name": "unity.prefab_revert_overrides",
+      "name": "unity_prefab_revert_overrides",
       "description": "Revert prefab overrides on instances.",
       "inputSchema": {
         "type": "object",
@@ -1231,7 +1231,7 @@
       }
     },
     {
-      "name": "unity.prefab_unpack",
+      "name": "unity_prefab_unpack",
       "description": "Unpack prefab instances.",
       "inputSchema": {
         "type": "object",
@@ -1272,7 +1272,7 @@
       }
     },
     {
-      "name": "unity.prefab_create_variant",
+      "name": "unity_prefab_create_variant",
       "description": "Create a prefab variant from base prefab (optionally using instance overrides).",
       "inputSchema": {
         "type": "object",
@@ -1312,7 +1312,7 @@
       }
     },
     {
-      "name": "unity.asset_move",
+      "name": "unity_asset_move",
       "description": "Move assets into a destination folder.",
       "inputSchema": {
         "type": "object",
@@ -1358,7 +1358,7 @@
       }
     },
     {
-      "name": "unity.asset_rename",
+      "name": "unity_asset_rename",
       "description": "Rename an asset.",
       "inputSchema": {
         "type": "object",
@@ -1393,7 +1393,7 @@
       }
     },
     {
-      "name": "unity.asset_delete_to_trash",
+      "name": "unity_asset_delete_to_trash",
       "description": "Delete assets to OS trash/recycle bin.",
       "inputSchema": {
         "type": "object",
@@ -1426,7 +1426,7 @@
       }
     },
     {
-      "name": "unity.asset_reimport",
+      "name": "unity_asset_reimport",
       "description": "Reimport one or many assets.",
       "inputSchema": {
         "type": "object",
@@ -1467,7 +1467,7 @@
       }
     },
     {
-      "name": "unity.asset_set_labels",
+      "name": "unity_asset_set_labels",
       "description": "Set/add/remove labels for an asset.",
       "inputSchema": {
         "type": "object",
@@ -1516,3 +1516,4 @@
     }
   ]
 }
+

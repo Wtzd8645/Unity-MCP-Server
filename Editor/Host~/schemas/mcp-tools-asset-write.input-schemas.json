@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.asset_move",
+      "name": "unity_asset_move",
       "description": "Move assets into a destination folder.",
       "inputSchema": {
         "type": "object",
@@ -247,7 +247,7 @@
       }
     },
     {
-      "name": "unity.asset_rename",
+      "name": "unity_asset_rename",
       "description": "Rename an asset.",
       "inputSchema": {
         "type": "object",
@@ -282,7 +282,7 @@
       }
     },
     {
-      "name": "unity.asset_delete_to_trash",
+      "name": "unity_asset_delete_to_trash",
       "description": "Delete assets to OS trash/recycle bin.",
       "inputSchema": {
         "type": "object",
@@ -315,7 +315,7 @@
       }
     },
     {
-      "name": "unity.asset_reimport",
+      "name": "unity_asset_reimport",
       "description": "Reimport one or many assets.",
       "inputSchema": {
         "type": "object",
@@ -356,7 +356,7 @@
       }
     },
     {
-      "name": "unity.asset_set_labels",
+      "name": "unity_asset_set_labels",
       "description": "Set/add/remove labels for an asset.",
       "inputSchema": {
         "type": "object",
@@ -405,3 +405,4 @@
     }
   ]
 }
+

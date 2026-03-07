@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.asset_search",
+      "name": "unity_asset_search",
       "description": "Search assets by type/name/label/path.",
       "inputSchema": {
         "type": "object",
@@ -271,7 +271,7 @@
       }
     },
     {
-      "name": "unity.asset_get",
+      "name": "unity_asset_get",
       "description": "Read one asset's metadata and optional graph info.",
       "inputSchema": {
         "type": "object",
@@ -299,7 +299,7 @@
       }
     },
     {
-      "name": "unity.asset_refs",
+      "name": "unity_asset_refs",
       "description": "Traverse references for one asset.",
       "inputSchema": {
         "type": "object",
@@ -340,3 +340,4 @@
     }
   ]
 }
+

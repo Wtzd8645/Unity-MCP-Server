@@ -63,7 +63,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 items = items.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.get_console_logs completed.", payload);
+            return BridgeResponses.Success("unity_get_console_logs completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleClearConsole(UnityBridgeLogStore logStore)
@@ -77,7 +77,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 clearedEditorConsole = clearedEditorConsole,
             };
 
-            return BridgeResponses.Success("unity.clear_console completed.", payload);
+            return BridgeResponses.Success("unity_clear_console completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleRunTests(
@@ -109,7 +109,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return BridgeResponses.Error(errorMessage ?? "Failed to run tests.", errorStatus ?? "tool_exception", request.name);
             }
 
-            return BridgeResponses.Success("unity.run_tests completed.", result);
+            return BridgeResponses.Success("unity_run_tests completed.", result);
         }
 
         private static HashSet<string> BuildLevelSet(string[] levels)
@@ -163,3 +163,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+

@@ -53,7 +53,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 items = page.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.asset_search completed.", payload);
+            return BridgeResponses.Success("unity_asset_search completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleAssetGet(BridgeToolCallRequest request)
@@ -98,7 +98,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 payload.meta = BuildAssetMeta(targetPath, targetGuid);
             }
 
-            return BridgeResponses.Success("unity.asset_get completed.", payload);
+            return BridgeResponses.Success("unity_asset_get completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleAssetRefs(BridgeToolCallRequest request)
@@ -153,7 +153,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 edges = edges.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.asset_refs completed.", payload);
+            return BridgeResponses.Success("unity_asset_refs completed.", payload);
         }
 
         private static void TraverseOutboundRefs(
@@ -516,3 +516,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+

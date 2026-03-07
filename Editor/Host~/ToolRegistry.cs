@@ -5,36 +5,37 @@ namespace Blanketmen.UnityMcpServer.Host;
 
 public sealed class ToolRegistry
 {
-    private readonly IReadOnlyDictionary<string, ToolDefinition> _tools;
-    private readonly IReadOnlyDictionary<string, string> _toolToModule;
+    private readonly IReadOnlyDictionary<string, ToolDefinition> _toolsByName;
+    private readonly IReadOnlyDictionary<string, string> _toolToModuleByName;
 
     private ToolRegistry(
-        IReadOnlyDictionary<string, ToolDefinition> tools,
-        IReadOnlyDictionary<string, string> toolToModule,
+        IReadOnlyDictionary<string, ToolDefinition> toolsByName,
+        IReadOnlyDictionary<string, string> toolToModuleByName,
         IReadOnlyList<string> enabledModules)
     {
-        _tools = tools;
-        _toolToModule = toolToModule;
+        _toolsByName = toolsByName;
+        _toolToModuleByName = toolToModuleByName;
         EnabledModules = enabledModules;
     }
 
-    public IReadOnlyList<ToolDefinition> Tools => _tools.Values.ToList();
+    public IReadOnlyList<ToolDefinition> Tools => _toolsByName.Values.ToList();
     public IReadOnlyList<string> EnabledModules { get; }
 
     public bool TryGetTool(string name, out ToolDefinition tool)
     {
-        if (_tools.TryGetValue(name, out ToolDefinition? found))
-        {
-            tool = found;
-            return true;
-        }
-
-        tool = null!;
-        return false;
+        return _toolsByName.TryGetValue(name, out tool!);
     }
 
     public string? GetModuleForTool(string toolName)
-        => _toolToModule.TryGetValue(toolName, out string? module) ? module : null;
+    {
+        if (TryGetTool(toolName, out ToolDefinition tool) &&
+            _toolToModuleByName.TryGetValue(tool.Name, out string? module))
+        {
+            return module;
+        }
+
+        return null;
+    }
 
     public static ToolRegistry LoadFromSchemas(string mcpRoot, IReadOnlyCollection<string>? enabledModules)
     {
@@ -64,8 +65,8 @@ public sealed class ToolRegistry
             }
         }
 
-        var tools = new Dictionary<string, ToolDefinition>(StringComparer.Ordinal);
-        var toolToModule = new Dictionary<string, string>(StringComparer.Ordinal);
+        var toolsByName = new Dictionary<string, ToolDefinition>(StringComparer.Ordinal);
+        var toolToModuleByName = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (ModuleDefinition module in manifest.Modules.Where(m => selectedModules.Contains(m.Name)))
         {
@@ -80,16 +81,18 @@ public sealed class ToolRegistry
 
             foreach (ToolDefinition tool in LoadToolsFromSchemaFile(moduleSchemaPath))
             {
-                if (tools.TryAdd(tool.Name, tool))
+                if (!toolsByName.TryAdd(tool.Name, tool))
                 {
-                    toolToModule[tool.Name] = module.Name;
+                    continue;
                 }
+
+                toolToModuleByName[tool.Name] = module.Name;
             }
         }
 
         return new ToolRegistry(
-            tools,
-            toolToModule,
+            toolsByName,
+            toolToModuleByName,
             selectedModules.OrderBy(s => s, StringComparer.Ordinal).ToArray());
     }
 
@@ -141,12 +144,18 @@ public sealed class ToolRegistry
                 ? JsonNode.Parse(inputSchemaElement.GetRawText()) ?? new JsonObject()
                 : new JsonObject();
 
-            yield return new ToolDefinition(name, description, inputSchema);
+            yield return new ToolDefinition(
+                Name: name,
+                Description: description,
+                InputSchema: inputSchema);
         }
     }
 }
 
-public sealed record ToolDefinition(string Name, string Description, JsonNode InputSchema);
+public sealed record ToolDefinition(
+    string Name,
+    string Description,
+    JsonNode InputSchema);
 
 public sealed record ModuleManifest(IReadOnlyList<ModuleDefinition> Modules);
 
@@ -155,6 +164,3 @@ public sealed record ModuleDefinition(
     string Risk,
     bool EnabledByDefault,
     IReadOnlyList<string> Tools);
-
-
-

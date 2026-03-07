@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity.go_create",
+      "name": "unity_go_create",
       "description": "Create a new GameObject.",
       "inputSchema": {
         "type": "object",
@@ -260,7 +260,7 @@
       }
     },
     {
-      "name": "unity.go_delete",
+      "name": "unity_go_delete",
       "description": "Delete one or many GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -301,7 +301,7 @@
       }
     },
     {
-      "name": "unity.go_duplicate",
+      "name": "unity_go_duplicate",
       "description": "Duplicate one or many GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -341,7 +341,7 @@
       }
     },
     {
-      "name": "unity.go_reparent",
+      "name": "unity_go_reparent",
       "description": "Move objects under a new parent (or scene root).",
       "inputSchema": {
         "type": "object",
@@ -381,7 +381,7 @@
       }
     },
     {
-      "name": "unity.go_rename",
+      "name": "unity_go_rename",
       "description": "Rename a GameObject.",
       "inputSchema": {
         "type": "object",
@@ -415,7 +415,7 @@
       }
     },
     {
-      "name": "unity.go_set_active",
+      "name": "unity_go_set_active",
       "description": "Set active state for GameObjects.",
       "inputSchema": {
         "type": "object",
@@ -452,7 +452,7 @@
       }
     },
     {
-      "name": "unity.component_add",
+      "name": "unity_component_add",
       "description": "Add a component to a GameObject.",
       "inputSchema": {
         "type": "object",
@@ -490,7 +490,7 @@
       }
     },
     {
-      "name": "unity.component_remove",
+      "name": "unity_component_remove",
       "description": "Remove one component from a GameObject by type or component id.",
       "inputSchema": {
         "type": "object",
@@ -541,7 +541,7 @@
       }
     },
     {
-      "name": "unity.component_set_fields",
+      "name": "unity_component_set_fields",
       "description": "Set serialized fields on a component.",
       "inputSchema": {
         "type": "object",
@@ -589,3 +589,4 @@
     }
   ]
 }
+

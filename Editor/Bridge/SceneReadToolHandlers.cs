@@ -100,7 +100,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 items = page.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.list_scenes completed.", payload);
+            return BridgeResponses.Success("unity_list_scenes completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleOpenScene(BridgeToolCallRequest request)
@@ -144,7 +144,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 loadedScenes = GetLoadedScenePaths(),
             };
 
-            return BridgeResponses.Success("unity.open_scene completed.", payload);
+            return BridgeResponses.Success("unity_open_scene completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleGoFind(BridgeToolCallRequest request)
@@ -170,7 +170,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                return BridgeResponses.Error("Scene is not loaded. Use unity.open_scene first.", "not_found", request.name);
+                return BridgeResponses.Error("Scene is not loaded. Use unity_open_scene first.", "not_found", request.name);
             }
 
             bool filterIsActive = BridgeJson.RawJsonContainsProperty(request.argumentsJson, "isActive");
@@ -195,7 +195,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 items = page.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.go_find completed.", payload);
+            return BridgeResponses.Success("unity_go_find completed.", payload);
         }
 
         public static BridgeToolCallResponse HandleComponentGetFields(BridgeToolCallRequest request)
@@ -235,7 +235,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 fields = fields.ToArray(),
             };
 
-            return BridgeResponses.Success("unity.component_get_fields completed.", payload);
+            return BridgeResponses.Success("unity_component_get_fields completed.", payload);
         }
 
         private static void CollectGoMatches(
@@ -645,3 +645,4 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
+
