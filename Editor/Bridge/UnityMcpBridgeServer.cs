@@ -58,7 +58,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             autoStartChecked = true;
             EditorApplication.update -= TryAutoStartBridge;
 
-            UnityMcpHostSettings settings = UnityMcpHostSettings.GetOrCreate();
+            UnityMcpHostSettings settings = UnityMcpHostSettings.Instance;
             if (settings.AutoStartHostOnLoad)
             {
                 Start();
@@ -73,12 +73,12 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
                 return;
             }
 
-            string transport = ResolveTransport();
+            BridgeTransportKind transport = ResolveTransport();
             httpPrefix = ResolveHttpPrefix();
             pipeName = ResolvePipeName();
             IsRunning = true;
 
-            if (string.Equals(transport, "pipe", StringComparison.OrdinalIgnoreCase))
+            if (transport == BridgeTransportKind.Pipe)
             {
                 StartPipeServer();
                 Debug.Log($"[UnityMcpBridge] Started. Pipe: {pipeName}");
@@ -441,15 +441,12 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             LogStore.Add(condition, stackTrace, type);
         }
 
-        private static string ResolveTransport()
+        private static BridgeTransportKind ResolveTransport()
         {
             string transport = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_TRANSPORT");
-            if (string.IsNullOrWhiteSpace(transport))
-            {
-                transport = UnityMcpHostSettings.GetOrCreate().BridgeTransport;
-            }
-
-            return string.Equals(transport, "pipe", StringComparison.OrdinalIgnoreCase) ? "pipe" : "http";
+            return string.IsNullOrWhiteSpace(transport)
+                ? UnityMcpHostSettings.Instance.BridgeTransport
+                : string.Equals(transport, "pipe", StringComparison.OrdinalIgnoreCase) ? BridgeTransportKind.Pipe : BridgeTransportKind.Http;
         }
 
         private static string ResolveHttpPrefix()
@@ -457,7 +454,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             string envUrl = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_HTTP_URL");
             if (string.IsNullOrWhiteSpace(envUrl))
             {
-                envUrl = UnityMcpHostSettings.GetOrCreate().BridgeHttpUrl;
+                envUrl = UnityMcpHostSettings.Instance.BridgeHttpUrl;
             }
 
             if (string.IsNullOrWhiteSpace(envUrl))
@@ -478,7 +475,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             string envName = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_PIPE_NAME");
             if (string.IsNullOrWhiteSpace(envName))
             {
-                envName = UnityMcpHostSettings.GetOrCreate().BridgePipeName;
+                envName = UnityMcpHostSettings.Instance.BridgePipeName;
             }
 
             return string.IsNullOrWhiteSpace(envName) ? DefaultPipeName : envName;
@@ -529,4 +526,3 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
-

@@ -181,7 +181,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             string raw = Environment.GetEnvironmentVariable(AllowedPathPrefixesEnv);
             if (string.IsNullOrWhiteSpace(raw))
             {
-                raw = UnityMcpHostSettings.GetOrCreate().AllowedPathPrefixes;
+                raw = UnityMcpHostSettings.Instance.AllowedPathPrefixes;
             }
 
             if (string.IsNullOrWhiteSpace(raw))
@@ -205,7 +205,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             string raw = Environment.GetEnvironmentVariable(AllowedComponentTypesEnv);
             if (string.IsNullOrWhiteSpace(raw))
             {
-                raw = UnityMcpHostSettings.GetOrCreate().AllowedComponentTypes;
+                raw = UnityMcpHostSettings.Instance.AllowedComponentTypes;
             }
 
             if (string.IsNullOrWhiteSpace(raw))

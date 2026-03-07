@@ -1,13 +1,19 @@
 namespace Blanketmen.UnityMcpServer.Host;
 
+internal enum UnityBridgeTransport
+{
+    Http = 0,
+    Pipe = 1,
+}
+
 public static class UnityBridgeClientFactory
 {
     public static IUnityBridgeClient CreateFromEnvironment()
     {
-        string transport = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_TRANSPORT") ?? "http";
+        UnityBridgeTransport transport = ParseTransport(Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_TRANSPORT"));
         int timeoutMs = ParseInt("UNITY_MCP_BRIDGE_TIMEOUT_MS", 5000, min: 500, max: 120000);
 
-        if (transport.Equals("pipe", StringComparison.OrdinalIgnoreCase))
+        if (transport == UnityBridgeTransport.Pipe)
         {
             string pipeName = Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_PIPE_NAME") ?? "unity-mcp-bridge";
             return new NamedPipeUnityBridgeClient(pipeName, timeoutMs);
@@ -21,6 +27,13 @@ public static class UnityBridgeClientFactory
         }
 
         return new HttpUnityBridgeClient(baseUri, timeoutMs);
+    }
+
+    private static UnityBridgeTransport ParseTransport(string? value)
+    {
+        return string.Equals(value, "pipe", StringComparison.OrdinalIgnoreCase)
+            ? UnityBridgeTransport.Pipe
+            : UnityBridgeTransport.Http;
     }
 
     private static int ParseInt(string envName, int defaultValue, int min, int max)
@@ -44,5 +57,3 @@ public static class UnityBridgeClientFactory
         return value;
     }
 }
-
-

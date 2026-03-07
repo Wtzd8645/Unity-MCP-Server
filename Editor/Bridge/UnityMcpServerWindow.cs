@@ -8,10 +8,10 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private static UnityMcpServerWindow window;
         private UnityMcpHostSettings settings;
 
-        [MenuItem("Tools/Unity MCP Server Bridge")]
+        [MenuItem("Tools/Unity MCP Bridge")]
         public static void ShowWindow()
         {
-            window = GetWindow<UnityMcpServerWindow>("Unity MCP Server Bridge");
+            window = GetWindow<UnityMcpServerWindow>("Unity MCP Bridge");
             window.minSize = new Vector2(560f, 560f);
             window.Show();
         }
@@ -19,7 +19,8 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private void OnEnable()
         {
             window = this;
-            settings = UnityMcpHostSettings.GetOrCreate();
+            settings = UnityMcpHostSettings.Instance;
+            settings.EnsureDefaults();
         }
 
         private void OnDisable()
@@ -39,9 +40,11 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         {
             if (settings == null)
             {
-                settings = UnityMcpHostSettings.GetOrCreate();
+                settings = UnityMcpHostSettings.Instance;
+                settings.EnsureDefaults();
             }
 
+            EditorGUILayout.LabelField("Unity MCP Bridge", EditorStyles.boldLabel, GUILayout.ExpandWidth(false));
             DrawStatusSection();
             EditorGUILayout.Space(8f);
             DrawSettingsSection();
@@ -51,7 +54,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField("Status", EditorStyles.boldLabel, GUILayout.Width(90f));
+                EditorGUILayout.LabelField("Status", EditorStyles.boldLabel, GUILayout.Width(60f));
                 EditorGUILayout.LabelField(UnityMcpBridgeServer.IsRunning ? "Running" : "Stopped", EditorStyles.boldLabel);
             }
 
@@ -78,10 +81,8 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             {
                 EditorGUI.BeginChangeCheck();
 
-                string transport = settings.BridgeTransport;
-                int transportIndex = transport == "pipe" ? 1 : 0;
-                transportIndex = EditorGUILayout.Popup("Bridge Transport", transportIndex, new[] { "http", "pipe" });
-                string bridgeTransport = transportIndex == 1 ? "pipe" : "http";
+                BridgeTransportKind bridgeTransport = settings.BridgeTransport;
+                bridgeTransport = (BridgeTransportKind)EditorGUILayout.EnumPopup("Bridge Transport", bridgeTransport);
 
                 string bridgeHttpUrl = EditorGUILayout.TextField("Bridge HTTP URL", settings.BridgeHttpUrl);
                 string bridgePipeName = EditorGUILayout.TextField("Bridge Pipe Name", settings.BridgePipeName);
@@ -106,7 +107,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             {
                 if (GUILayout.Button("Save Settings"))
                 {
-                    settings.SaveSettingsToDisk();
+                    settings.SaveToDisk();
                     AssetDatabase.SaveAssets();
                 }
             }

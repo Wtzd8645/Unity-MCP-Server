@@ -13,7 +13,7 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private const string DefaultDotnetExecutable = "dotnet";
         private const string DefaultHostProjectRelativePath = "Editor/Host~/UnityMcpServer.Host.csproj";
         private const string PackageName = "com.blanketmen.unity-mcp-server";
-        private const string DefaultBridgeTransport = "http";
+        private const BridgeTransportKind DefaultBridgeTransport = BridgeTransportKind.Http;
         private const string DefaultBridgeHttpUrl = "http://127.0.0.1:38100/";
         private const string DefaultBridgePipeName = "unity-mcp-bridge";
         private const int DefaultBridgeTimeoutMs = 5000;
@@ -21,11 +21,13 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         private const string DefaultAllowedPathPrefixes = "Assets/";
         private const string DefaultAllowedComponentTypes = "*";
 
+        public static UnityMcpHostSettings Instance => instance;
+
         [SerializeField] private string repositoryRootOverride = string.Empty;
         [SerializeField] private string dotnetExecutable = DefaultDotnetExecutable;
         [SerializeField] private string hostProjectPath = DefaultHostProjectRelativePath;
         [SerializeField] private string enabledModules = string.Empty;
-        [SerializeField] private string bridgeTransport = DefaultBridgeTransport;
+        [SerializeField] private BridgeTransportKind bridgeTransport = DefaultBridgeTransport;
         [SerializeField] private string bridgeHttpUrl = DefaultBridgeHttpUrl;
         [SerializeField] private string bridgePipeName = DefaultBridgePipeName;
         [SerializeField] private int bridgeTimeoutMs = DefaultBridgeTimeoutMs;
@@ -33,13 +35,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         [SerializeField] private string allowedPathPrefixes = DefaultAllowedPathPrefixes;
         [SerializeField] private string allowedComponentTypes = DefaultAllowedComponentTypes;
         [SerializeField] private bool autoStartHostOnLoad;
-
-        public static UnityMcpHostSettings GetOrCreate()
-        {
-            UnityMcpHostSettings settings = instance;
-            settings.EnsureDefaults();
-            return settings;
-        }
 
         public string RepositoryRootOverride
         {
@@ -65,10 +60,10 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             set { enabledModules = value == null ? string.Empty : value.Trim(); }
         }
 
-        public string BridgeTransport
+        public BridgeTransportKind BridgeTransport
         {
-            get { return NormalizeTransport(bridgeTransport); }
-            set { bridgeTransport = NormalizeTransport(value); }
+            get { return bridgeTransport; }
+            set { bridgeTransport = value; }
         }
 
         public string BridgeHttpUrl
@@ -246,12 +241,13 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
 
             items.Add(normalized);
         }
-        public void SaveSettingsToDisk()
+
+        public void SaveToDisk()
         {
             Save(true);
         }
 
-        private void EnsureDefaults()
+        public void EnsureDefaults()
         {
             DotnetExecutable = DotnetExecutable;
             HostProjectPath = HostProjectPath;
@@ -263,11 +259,6 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
             StartupProbeTimeoutMs = StartupProbeTimeoutMs;
             AllowedPathPrefixes = AllowedPathPrefixes;
             AllowedComponentTypes = AllowedComponentTypes;
-        }
-
-        private static string NormalizeTransport(string value)
-        {
-            return string.Equals(value, "pipe", StringComparison.OrdinalIgnoreCase) ? "pipe" : "http";
         }
 
         private static string TryResolvePackageRoot()
@@ -319,4 +310,3 @@ namespace Blanketmen.UnityMcp.Bridge.Editor
         }
     }
 }
-
