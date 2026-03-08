@@ -20,12 +20,12 @@ Out of scope in this bundle:
 ## Module coverage
 
 - `core` schema: `Unity-MCP-Gateway/schemas/mcp-tools-core.input-schemas.json`
-- Tools: `unity.ping`, `unity.project_info`, `unity.playmode_status`, `unity.playmode_start`, `unity.playmode_stop`
+- Tools: `unity_ping`, `unity_project_info`, `unity_playmode_status`, `unity_playmode_start`, `unity_playmode_stop`
 - `diagnostics` schema: `Unity-MCP-Gateway/schemas/mcp-tools-diagnostics.input-schemas.json`
-- Tools: `unity.get_console_logs`, `unity.clear_console`, `unity.run_tests`
+- Tools: `unity_get_console_logs`, `unity_clear_console`, `unity_run_tests`
 - `scene_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-read.input-schemas.json`
-- Tools in this document: `unity.list_scenes`, `unity.open_scene`
-- Cross-reference: `unity.go_find` and `unity.component_get_fields` are documented in `mcp-scene-write-asset-prefab-tool-schemas.md` because they are heavily used by write flows.
+- Tools in this document: `unity_list_scenes`, `unity_open_scene`
+- Cross-reference: `unity_go_find` and `unity_component_get_fields` are documented in `mcp-scene-write-asset-prefab-tool-schemas.md` because they are heavily used by write flows.
 
 ## 2) Cross-tool conventions
 
@@ -61,7 +61,7 @@ type ErrorStructuredContent = {
 
 ## 3) Tool schemas (core + diagnostics + scene_read)
 
-### 3.1 `unity.ping`
+### 3.1 `unity_ping`
 
 Purpose: Verify bridge connectivity and editor heartbeat.
 
@@ -85,7 +85,7 @@ Output:
 }
 ```
 
-### 3.2 `unity.project_info`
+### 3.2 `unity_project_info`
 
 Purpose: Return project/runtime/editor basics.
 
@@ -116,7 +116,7 @@ Output:
 }
 ```
 
-### 3.3 `unity.list_scenes`
+### 3.3 `unity_list_scenes`
 
 Purpose: List scenes from Build Settings and/or project assets.
 
@@ -145,7 +145,7 @@ Output:
 }
 ```
 
-### 3.4 `unity.open_scene`
+### 3.4 `unity_open_scene`
 
 Purpose: Open a scene in Editor (this mutates loaded-scene/editor state).
 
@@ -168,7 +168,7 @@ Output:
 }
 ```
 
-### 3.5 `unity.playmode_status`
+### 3.5 `unity_playmode_status`
 
 Purpose: Query play mode runtime state.
 
@@ -186,7 +186,7 @@ Output:
 }
 ```
 
-### 3.6 `unity.playmode_start`
+### 3.6 `unity_playmode_start`
 
 Purpose: Enter play mode and optionally wait until state transition completes.
 
@@ -211,7 +211,7 @@ Output:
 }
 ```
 
-### 3.7 `unity.playmode_stop`
+### 3.7 `unity_playmode_stop`
 
 Purpose: Exit play mode and optionally wait until complete.
 
@@ -236,7 +236,7 @@ Output:
 }
 ```
 
-### 3.8 `unity.get_console_logs`
+### 3.8 `unity_get_console_logs`
 
 Purpose: Read Unity Console messages with incremental polling.
 
@@ -266,7 +266,7 @@ Output:
 }
 ```
 
-### 3.9 `unity.clear_console`
+### 3.9 `unity_clear_console`
 
 Purpose: Clear Unity Console.
 
@@ -283,7 +283,7 @@ Output:
 }
 ```
 
-### 3.10 `unity.run_tests`
+### 3.10 `unity_run_tests`
 
 Purpose: Run Unity Test Framework tests (defaults to EditMode).
 
@@ -341,14 +341,15 @@ Output:
 
 ## 5) Recommended implementation order
 
-1. `unity.ping`
-2. `unity.project_info`
-3. `unity.list_scenes`
-4. `unity.open_scene`
-5. `unity.playmode_status/start/stop`
-6. `unity.get_console_logs`
-7. `unity.clear_console`
-8. `unity.run_tests`
+1. `unity_ping`
+2. `unity_project_info`
+3. `unity_list_scenes`
+4. `unity_open_scene`
+5. `unity_playmode_status/start/stop`
+6. `unity_get_console_logs`
+7. `unity_clear_console`
+8. `unity_run_tests`
+
 
 
 

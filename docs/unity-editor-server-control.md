@@ -1,75 +1,38 @@
-# Unity Editor Server Control (Full Server)
+# Unity Editor Bridge Control
 
-Status: Draft v0.1  
-Scope: Start/stop and supervise Unity MCP bridge + host process from Unity Editor
+Status: Draft v0.2  
+Scope: Start/stop and configure Unity MCP Bridge from Unity Editor
 
-## Entry points
+## Entry point
 
-- Menu: `Tools/Unity MCP Bridge/Start Full Server`
-- Menu: `Tools/Unity MCP Bridge/Stop Full Server`
-- Window: `Tools/Unity MCP Bridge/Server Control`
+- Menu: `Tools/Unity MCP Bridge`
 
-## What Start Full Server does
+## What the window does
 
-`UnityMcpHostSupervisor.StartFullServer()` performs:
+`UnityMcpServerWindow` currently controls bridge lifecycle only:
 
-1. Load `UnityMcpHostSettings`.
-2. Apply current process environment values (module set, bridge transport, allowlists).
-3. Start Unity bridge server when `Auto Start Bridge With Host=true`.
-4. Launch host process with:
-   - executable: `Dotnet Executable` (default `dotnet`)
-   - command: `run --project <Host Project Path>`
-5. Run startup probe (`initialize` then `tools/list`) within `Startup Probe Timeout (ms)`.
+1. Show bridge status (`Running` / `Stopped`)
+2. Start bridge
+3. Stop bridge
+4. Edit bridge runtime settings
 
-If probe fails, host process is stopped and status becomes failed.
+## Settings shown in window
 
-## Server Control actions
+- `Bridge Transport`: `http` or `pipe`
+- `Bridge HTTP URL`: default `http://127.0.0.1:38100/`
+- `Bridge Pipe Name`: default `unity-mcp-bridge`
+- `Bridge Timeout (ms)`
+- `Allowed Path Prefixes`
+- `Allowed Component Types`
+- `Auto Start Bridge On Load`
 
-- `Start Full Server`: start bridge + host using current settings.
-- `Stop Full Server`: stop host process, then stop bridge.
-- `Start Bridge Only` / `Stop Bridge Only`: control bridge only.
-- `Start Host Only` / `Stop Host Only`: control host process only.
+Settings are persisted in `ProjectSettings/UnityMcpHostSettings.asset`.
 
-## Host settings (ProjectSettings/UnityMcpHostSettings.asset)
+## Host lifecycle note
 
-- `Package Root Override`: optional absolute/relative override for package root.
-- `Dotnet Executable`: dotnet CLI executable path/name.
-- `Host Project Path`: default `Unity-MCP-Gateway/UnityMcpGateway.csproj` (relative or absolute).
-  - Relative paths are auto-resolved from package root, project root, `Packages/com.blanketmen.mcp.bridge`, and `Library/PackageCache/com.blanketmen.mcp.bridge*`.
-- `Enabled Modules`: comma-separated module list; empty = schema defaults.
-- `Bridge Transport`: `http` or `pipe`.
-- `Bridge HTTP URL`: default `http://127.0.0.1:38100/`.
-- `Bridge Pipe Name`: default `unity-mcp-bridge`.
-- `Bridge Timeout (ms)`: clamped to `500..120000`.
-- `Startup Probe Timeout (ms)`: clamped to `1000..120000`.
-- `Allowed Path Prefixes`: default `Assets/`.
-- `Allowed Component Types`: default `*`.
-- `Auto Start Bridge With Host`: default `true`.
-- `Auto Start Full Server On Load`: start full server automatically after editor load.
-
-## Runtime status and logs
-
-- Status panel reports bridge/host running state and last supervisor status.
-- Host stderr and supervisor messages are buffered in the window (`Host Logs`).
-- `Clear Logs` clears only buffered logs in the UI.
-
-## Current limitation
-
-- Host uses MCP stdio transport.
-- A host process started from Unity is useful for Unity-side supervision and health checks.
-- External MCP clients usually still launch host themselves so they own stdio.
+The Unity Editor window does not manage Gateway process start/stop. Launch Gateway from external tooling (for example VS Code MCP config) and point it to this Unity bridge.
 
 ## Troubleshooting
 
-- `Host project not found`: verify `Host Project Path`; if needed set `Package Root Override` to force relative path root.
-- `startup probe failed`: ensure bridge transport/url/pipe settings match Unity bridge runtime.
-- Host not starting: verify `Dotnet Executable` and local .NET SDK installation.
-
-
-
-
-
-
-
-
-
+- Bridge not reachable: verify transport/url/pipe settings on both Gateway and Unity bridge.
+- Bridge start failed: check Unity Console for port/pipe conflicts and editor exceptions.

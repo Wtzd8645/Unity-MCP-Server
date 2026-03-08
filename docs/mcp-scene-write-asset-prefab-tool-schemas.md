@@ -6,15 +6,15 @@ Scope: Asset/Object/GameObject/Prefab operations
 ## Module coverage
 
 - `asset_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-asset-read.input-schemas.json`
-- Tools: `unity.asset_search`, `unity.asset_get`, `unity.asset_refs`
+- Tools: `unity_asset_search`, `unity_asset_get`, `unity_asset_refs`
 - `scene_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-read.input-schemas.json`
-- Tools: `unity.go_find`, `unity.component_get_fields`
+- Tools: `unity_go_find`, `unity_component_get_fields`
 - `scene_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-write.input-schemas.json`
-- Tools: `unity.go_create`, `unity.go_delete`, `unity.go_duplicate`, `unity.go_reparent`, `unity.go_rename`, `unity.go_set_active`, `unity.component_add`, `unity.component_remove`, `unity.component_set_fields`
+- Tools: `unity_go_create`, `unity_go_delete`, `unity_go_duplicate`, `unity_go_reparent`, `unity_go_rename`, `unity_go_set_active`, `unity_component_add`, `unity_component_remove`, `unity_component_set_fields`
 - `prefab_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-prefab-write.input-schemas.json`
-- Tools: `unity.prefab_create`, `unity.prefab_instantiate`, `unity.prefab_apply_overrides`, `unity.prefab_revert_overrides`, `unity.prefab_unpack`, `unity.prefab_create_variant`
+- Tools: `unity_prefab_create`, `unity_prefab_instantiate`, `unity_prefab_apply_overrides`, `unity_prefab_revert_overrides`, `unity_prefab_unpack`, `unity_prefab_create_variant`
 - `asset_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-asset-write.input-schemas.json`
-- Tools: `unity.asset_move`, `unity.asset_rename`, `unity.asset_delete_to_trash`, `unity.asset_reimport`, `unity.asset_set_labels`
+- Tools: `unity_asset_move`, `unity_asset_rename`, `unity_asset_delete_to_trash`, `unity_asset_reimport`, `unity_asset_set_labels`
 
 ## 1) Cross-tool conventions
 
@@ -109,13 +109,13 @@ Safety defaults:
 
 ### 1.4 Module boundary for assets
 
-- `asset_read`: `unity.asset_search`, `unity.asset_get`, `unity.asset_refs`
-- `asset_write`: `unity.asset_move`, `unity.asset_rename`, `unity.asset_delete_to_trash`, `unity.asset_reimport`, `unity.asset_set_labels`
+- `asset_read`: `unity_asset_search`, `unity_asset_get`, `unity_asset_refs`
+- `asset_write`: `unity_asset_move`, `unity_asset_rename`, `unity_asset_delete_to_trash`, `unity_asset_reimport`, `unity_asset_set_labels`
 - Recommendation: keep read/write modules separately enabled for permission isolation.
 
 ## 2) Module: asset_read
 
-### 2.1 `unity.asset_search`
+### 2.1 `unity_asset_search`
 
 Purpose: Search assets by type/name/label/path.
 
@@ -150,7 +150,7 @@ Output:
 }
 ```
 
-### 2.2 `unity.asset_get`
+### 2.2 `unity_asset_get`
 
 Purpose: Read one asset's metadata and optional graph info.
 
@@ -182,7 +182,7 @@ Output:
 }
 ```
 
-### 2.3 `unity.asset_refs`
+### 2.3 `unity_asset_refs`
 
 Purpose: Traverse references for one asset.
 
@@ -207,9 +207,9 @@ Output:
 
 ## 3) Module: scene_write
 
-Note: `unity.go_find` and `unity.component_get_fields` are `scene_read` tools kept in this document because write flows commonly depend on them.
+Note: `unity_go_find` and `unity_component_get_fields` are `scene_read` tools kept in this document because write flows commonly depend on them.
 
-### 3.1 `unity.go_find`
+### 3.1 `unity_go_find`
 
 Purpose: Find scene objects by conditions.
 
@@ -246,7 +246,7 @@ Output:
 }
 ```
 
-### 3.2 `unity.go_create`
+### 3.2 `unity_go_create`
 
 Purpose: Create a new GameObject.
 
@@ -268,7 +268,7 @@ Output:
 MutationResult
 ```
 
-### 3.3 `unity.go_delete`
+### 3.3 `unity_go_delete`
 
 Purpose: Delete one or many GameObjects.
 
@@ -287,7 +287,7 @@ Output:
 MutationResult
 ```
 
-### 3.4 `unity.go_duplicate`
+### 3.4 `unity_go_duplicate`
 
 Purpose: Duplicate one or many GameObjects.
 
@@ -307,7 +307,7 @@ Output:
 MutationResult
 ```
 
-### 3.5 `unity.go_reparent`
+### 3.5 `unity_go_reparent`
 
 Purpose: Move objects under a new parent (or scene root).
 
@@ -327,7 +327,7 @@ Output:
 MutationResult
 ```
 
-### 3.6 `unity.go_rename`
+### 3.6 `unity_go_rename`
 
 Input:
 ```ts
@@ -344,7 +344,7 @@ Output:
 MutationResult
 ```
 
-### 3.7 `unity.go_set_active`
+### 3.7 `unity_go_set_active`
 
 Input:
 ```ts
@@ -361,7 +361,7 @@ Output:
 MutationResult
 ```
 
-### 3.8 `unity.component_add`
+### 3.8 `unity_component_add`
 
 Input:
 ```ts
@@ -379,7 +379,7 @@ Output:
 MutationResult
 ```
 
-### 3.9 `unity.component_remove`
+### 3.9 `unity_component_remove`
 
 Input:
 ```ts
@@ -400,7 +400,7 @@ Output:
 MutationResult
 ```
 
-### 3.10 `unity.component_get_fields`
+### 3.10 `unity_component_get_fields`
 
 Input:
 ```ts
@@ -427,7 +427,7 @@ Output:
 }
 ```
 
-### 3.11 `unity.component_set_fields`
+### 3.11 `unity_component_set_fields`
 
 Input:
 ```ts
@@ -449,7 +449,7 @@ MutationResult
 
 ## 4) Module: prefab_write
 
-### 4.1 `unity.prefab_create`
+### 4.1 `unity_prefab_create`
 
 Purpose: Save a scene object as a prefab.
 
@@ -470,7 +470,7 @@ Output:
 MutationResult
 ```
 
-### 4.2 `unity.prefab_instantiate`
+### 4.2 `unity_prefab_instantiate`
 
 Input:
 ```ts
@@ -489,7 +489,7 @@ Output:
 MutationResult
 ```
 
-### 4.3 `unity.prefab_apply_overrides`
+### 4.3 `unity_prefab_apply_overrides`
 
 Input:
 ```ts
@@ -508,7 +508,7 @@ Output:
 MutationResult
 ```
 
-### 4.4 `unity.prefab_revert_overrides`
+### 4.4 `unity_prefab_revert_overrides`
 
 Input:
 ```ts
@@ -527,7 +527,7 @@ Output:
 MutationResult
 ```
 
-### 4.5 `unity.prefab_unpack`
+### 4.5 `unity_prefab_unpack`
 
 Input:
 ```ts
@@ -544,7 +544,7 @@ Output:
 MutationResult
 ```
 
-### 4.6 `unity.prefab_create_variant`
+### 4.6 `unity_prefab_create_variant`
 
 Input:
 ```ts
@@ -565,7 +565,7 @@ MutationResult
 
 ## 5) Module: asset_write
 
-### 5.1 `unity.asset_move`
+### 5.1 `unity_asset_move`
 
 Input:
 ```ts
@@ -583,7 +583,7 @@ Output:
 MutationResult
 ```
 
-### 5.2 `unity.asset_rename`
+### 5.2 `unity_asset_rename`
 
 Input:
 ```ts
@@ -600,7 +600,7 @@ Output:
 MutationResult
 ```
 
-### 5.3 `unity.asset_delete_to_trash`
+### 5.3 `unity_asset_delete_to_trash`
 
 Input:
 ```ts
@@ -616,7 +616,7 @@ Output:
 MutationResult
 ```
 
-### 5.4 `unity.asset_reimport`
+### 5.4 `unity_asset_reimport`
 
 Input:
 ```ts
@@ -634,7 +634,7 @@ Output:
 MutationResult
 ```
 
-### 5.5 `unity.asset_set_labels`
+### 5.5 `unity_asset_set_labels`
 
 Input:
 ```ts
@@ -666,6 +666,7 @@ MutationResult
 - Every mutating tool emits `MutationResult.items[]`.
 - All object/asset identifiers resolve by `guid`/`globalObjectId` first.
 - All operations are restricted to allowlisted paths/types/components.
+
 
 
 

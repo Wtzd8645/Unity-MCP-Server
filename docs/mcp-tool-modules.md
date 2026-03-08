@@ -7,37 +7,37 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 
 1. `core`
 - Purpose: editor connectivity and runtime status.
-- Tools: `unity.ping`, `unity.project_info`, `unity.playmode_status`, `unity.playmode_start`, `unity.playmode_stop`
+- Tools: `unity_ping`, `unity_project_info`, `unity_playmode_status`, `unity_playmode_start`, `unity_playmode_stop`
 - Risk: low
 
 2. `diagnostics`
 - Purpose: logs and test execution.
-- Tools: `unity.get_console_logs`, `unity.clear_console`, `unity.run_tests`
+- Tools: `unity_get_console_logs`, `unity_clear_console`, `unity_run_tests`
 - Risk: low to medium (`run_tests` is long-running)
 
 3. `scene_read`
-- Purpose: scene/object inspection with optional scene switching (`unity.open_scene`).
-- Tools: `unity.list_scenes`, `unity.open_scene`, `unity.go_find`, `unity.component_get_fields`
-- Risk: low to medium (`unity.open_scene` changes editor loaded-scene state)
+- Purpose: scene/object inspection with optional scene switching (`unity_open_scene`).
+- Tools: `unity_list_scenes`, `unity_open_scene`, `unity_go_find`, `unity_component_get_fields`
+- Risk: low to medium (`unity_open_scene` changes editor loaded-scene state)
 
 4. `scene_write`
 - Purpose: mutate GameObjects/components in scenes.
-- Tools: `unity.go_create`, `unity.go_delete`, `unity.go_duplicate`, `unity.go_reparent`, `unity.go_rename`, `unity.go_set_active`, `unity.component_add`, `unity.component_remove`, `unity.component_set_fields`
+- Tools: `unity_go_create`, `unity_go_delete`, `unity_go_duplicate`, `unity_go_reparent`, `unity_go_rename`, `unity_go_set_active`, `unity_component_add`, `unity_component_remove`, `unity_component_set_fields`
 - Risk: medium
 
 5. `prefab_write`
 - Purpose: prefab creation/instance mutation workflows.
-- Tools: `unity.prefab_create`, `unity.prefab_instantiate`, `unity.prefab_apply_overrides`, `unity.prefab_revert_overrides`, `unity.prefab_unpack`, `unity.prefab_create_variant`
+- Tools: `unity_prefab_create`, `unity_prefab_instantiate`, `unity_prefab_apply_overrides`, `unity_prefab_revert_overrides`, `unity_prefab_unpack`, `unity_prefab_create_variant`
 - Risk: medium to high
 
 6. `asset_read`
 - Purpose: read/search dependency graph for assets.
-- Tools: `unity.asset_search`, `unity.asset_get`, `unity.asset_refs`
+- Tools: `unity_asset_search`, `unity_asset_get`, `unity_asset_refs`
 - Risk: low
 
 7. `asset_write`
 - Purpose: mutate asset files/import state/labels.
-- Tools: `unity.asset_move`, `unity.asset_rename`, `unity.asset_delete_to_trash`, `unity.asset_reimport`, `unity.asset_set_labels`
+- Tools: `unity_asset_move`, `unity_asset_rename`, `unity_asset_delete_to_trash`, `unity_asset_reimport`, `unity_asset_set_labels`
 - Risk: high
 
 ## Schema files
@@ -53,7 +53,7 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 
 ## Operational docs
 
-- `Documentation~/unity-editor-server-control.md`: Unity Editor full-server start/stop and supervision flow.
+- `docs/unity-editor-server-control.md`: Unity Editor bridge start/stop and bridge settings flow.
 
 ## Recommended default enablement
 
@@ -71,6 +71,8 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 3. Full automation profile
 - Modules: all modules
 - Extra guardrails: path allowlist, type/component allowlist, `dryRun/apply` enforcement
+
+
 
 
 
