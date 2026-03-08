@@ -25,7 +25,7 @@ Thumbs.db
 *.VC.db
 
 # Keep host project file tracked
-!Editor/Host~/*.csproj
+!Unity-MCP-Gateway/*.csproj
 
 # Optional Unity project temp folders (if this repo is opened as a Unity project)
 /[Ll]ibrary/
@@ -52,3 +52,5 @@ crashlytics-build.properties
 *.sln
 *.unityproj
 ExportedObj/
+
+

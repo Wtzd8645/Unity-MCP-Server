@@ -5,15 +5,15 @@ Scope: Asset/Object/GameObject/Prefab operations
 
 ## Module coverage
 
-- `asset_read` schema: `Editor/Host~/schemas/mcp-tools-asset-read.input-schemas.json`
+- `asset_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-asset-read.input-schemas.json`
 - Tools: `unity.asset_search`, `unity.asset_get`, `unity.asset_refs`
-- `scene_read` schema: `Editor/Host~/schemas/mcp-tools-scene-read.input-schemas.json`
+- `scene_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-read.input-schemas.json`
 - Tools: `unity.go_find`, `unity.component_get_fields`
-- `scene_write` schema: `Editor/Host~/schemas/mcp-tools-scene-write.input-schemas.json`
+- `scene_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-write.input-schemas.json`
 - Tools: `unity.go_create`, `unity.go_delete`, `unity.go_duplicate`, `unity.go_reparent`, `unity.go_rename`, `unity.go_set_active`, `unity.component_add`, `unity.component_remove`, `unity.component_set_fields`
-- `prefab_write` schema: `Editor/Host~/schemas/mcp-tools-prefab-write.input-schemas.json`
+- `prefab_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-prefab-write.input-schemas.json`
 - Tools: `unity.prefab_create`, `unity.prefab_instantiate`, `unity.prefab_apply_overrides`, `unity.prefab_revert_overrides`, `unity.prefab_unpack`, `unity.prefab_create_variant`
-- `asset_write` schema: `Editor/Host~/schemas/mcp-tools-asset-write.input-schemas.json`
+- `asset_write` schema: `Unity-MCP-Gateway/schemas/mcp-tools-asset-write.input-schemas.json`
 - Tools: `unity.asset_move`, `unity.asset_rename`, `unity.asset_delete_to_trash`, `unity.asset_reimport`, `unity.asset_set_labels`
 
 ## 1) Cross-tool conventions
@@ -666,5 +666,8 @@ MutationResult
 - Every mutating tool emits `MutationResult.items[]`.
 - All object/asset identifiers resolve by `guid`/`globalObjectId` first.
 - All operations are restricted to allowlisted paths/types/components.
+
+
+
 
 

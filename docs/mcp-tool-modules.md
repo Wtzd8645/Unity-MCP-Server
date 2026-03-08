@@ -42,14 +42,14 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 
 ## Schema files
 
-- `core`: `Editor/Host~/schemas/mcp-tools-core.input-schemas.json`
-- `diagnostics`: `Editor/Host~/schemas/mcp-tools-diagnostics.input-schemas.json`
-- `scene_read`: `Editor/Host~/schemas/mcp-tools-scene-read.input-schemas.json`
-- `scene_write`: `Editor/Host~/schemas/mcp-tools-scene-write.input-schemas.json`
-- `prefab_write`: `Editor/Host~/schemas/mcp-tools-prefab-write.input-schemas.json`
-- `asset_read`: `Editor/Host~/schemas/mcp-tools-asset-read.input-schemas.json`
-- `asset_write`: `Editor/Host~/schemas/mcp-tools-asset-write.input-schemas.json`
-- all tools: `Editor/Host~/schemas/mcp-tools-all.input-schemas.json`
+- `core`: `Unity-MCP-Gateway/schemas/mcp-tools-core.input-schemas.json`
+- `diagnostics`: `Unity-MCP-Gateway/schemas/mcp-tools-diagnostics.input-schemas.json`
+- `scene_read`: `Unity-MCP-Gateway/schemas/mcp-tools-scene-read.input-schemas.json`
+- `scene_write`: `Unity-MCP-Gateway/schemas/mcp-tools-scene-write.input-schemas.json`
+- `prefab_write`: `Unity-MCP-Gateway/schemas/mcp-tools-prefab-write.input-schemas.json`
+- `asset_read`: `Unity-MCP-Gateway/schemas/mcp-tools-asset-read.input-schemas.json`
+- `asset_write`: `Unity-MCP-Gateway/schemas/mcp-tools-asset-write.input-schemas.json`
+- all tools: `Unity-MCP-Gateway/schemas/mcp-tools-all.input-schemas.json`
 
 ## Operational docs
 
@@ -71,3 +71,6 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 3. Full automation profile
 - Modules: all modules
 - Extra guardrails: path allowlist, type/component allowlist, `dryRun/apply` enforcement
+
+
+

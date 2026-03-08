@@ -1,9 +1,14 @@
 # Unity MCP Server Skeleton (.NET 10)
 
-This repository now uses Unity package root layout and includes an executable MCP host:
+This repository is organized as one main repo with two sub-repo directories:
 
-- Bridge: `Editor/Bridge`
-- Host: `Editor/Host~`
+- `Unity-MCP-Gateway` (Gateway, previously Host)
+- `Unity-MCP-Bridge` (Unity bridge runtime/editor integration)
+
+Current code layout:
+
+- Gateway code: `Unity-MCP-Gateway`
+- Bridge code: `Unity-MCP-Bridge/Editor`
 - Framework: `.NET 10` (`net10.0`)
 - Transport: `stdio` JSON-RPC with `Content-Length` framing
 - Implemented MCP methods:
@@ -16,13 +21,13 @@ This repository now uses Unity package root layout and includes an executable MC
 
 Tool metadata is loaded from:
 
-- `Editor/Host~/schemas/mcp-tool-modules.json`
-- `Editor/Host~/schemas/mcp-tools-*.input-schemas.json` (per enabled module)
+- `Unity-MCP-Gateway/schemas/mcp-tool-modules.json`
+- `Unity-MCP-Gateway/schemas/mcp-tools-*.input-schemas.json` (per enabled module)
 
 ## Run
 
 ```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Editor/Host~/UnityMcpServer.Host.csproj
+DOTNET_CLI_HOME=/tmp dotnet run --project Unity-MCP-Gateway/UnityMcpGateway.csproj
 ```
 
 Optional environment variables:
@@ -51,7 +56,7 @@ Unity package now supports a one-click "full server" flow:
 In `Server Control`, configure:
 
 - `Dotnet Executable` (default: `dotnet`)
-- `Host Project Path` (default: `Editor/Host~/UnityMcpServer.Host.csproj`)
+- `Host Project Path` (default: `Unity-MCP-Gateway/UnityMcpGateway.csproj`)
 - Bridge transport / timeout and write allowlists
 
 `Host Project Path` supports relative or absolute paths. For relative paths, the bridge resolves candidates against:
@@ -61,7 +66,6 @@ In `Server Control`, configure:
 - `Packages/com.blanketmen.mcp.bridge`
 - `Library/PackageCache/com.blanketmen.mcp.bridge*`
 
-It also falls back to legacy path `src/UnityMcpServer.Host/UnityMcpServer.Host.csproj` for older checkouts.
 Then click `Start Full Server` to:
 
 1. Start Unity bridge (`UnityMcpBridgeServer`)
@@ -70,7 +74,7 @@ Then click `Start Full Server` to:
 
 Important limitation:
 
-- `UnityMcpServer.Host` currently uses stdio MCP transport only.
+- `UnityMcpGateway` currently uses stdio MCP transport only.
 - A host process started by Unity is suitable for Unity-side supervision and health checks, but external MCP clients normally still need to launch the host process themselves so they can own stdio.
 
 ## Current behavior
@@ -115,5 +119,13 @@ Important limitation:
 - `unity.run_tests` is implemented via Unity Test Framework reflection APIs (requires `com.unity.test-framework`).
   - when `includeXmlReportPath=true`, bridge writes `Library/McpReports/latest-test-results.xml`.
 - Selective include flags for `prefab_apply_overrides` / `prefab_revert_overrides` are currently `unsupported` (all include flags must be `true`).
+
+
+
+
+
+
+
+
 
 

@@ -19,11 +19,11 @@ Out of scope in this bundle:
 
 ## Module coverage
 
-- `core` schema: `Editor/Host~/schemas/mcp-tools-core.input-schemas.json`
+- `core` schema: `Unity-MCP-Gateway/schemas/mcp-tools-core.input-schemas.json`
 - Tools: `unity.ping`, `unity.project_info`, `unity.playmode_status`, `unity.playmode_start`, `unity.playmode_stop`
-- `diagnostics` schema: `Editor/Host~/schemas/mcp-tools-diagnostics.input-schemas.json`
+- `diagnostics` schema: `Unity-MCP-Gateway/schemas/mcp-tools-diagnostics.input-schemas.json`
 - Tools: `unity.get_console_logs`, `unity.clear_console`, `unity.run_tests`
-- `scene_read` schema: `Editor/Host~/schemas/mcp-tools-scene-read.input-schemas.json`
+- `scene_read` schema: `Unity-MCP-Gateway/schemas/mcp-tools-scene-read.input-schemas.json`
 - Tools in this document: `unity.list_scenes`, `unity.open_scene`
 - Cross-reference: `unity.go_find` and `unity.component_get_fields` are documented in `mcp-scene-write-asset-prefab-tool-schemas.md` because they are heavily used by write flows.
 
@@ -349,6 +349,9 @@ Output:
 6. `unity.get_console_logs`
 7. `unity.clear_console`
 8. `unity.run_tests`
+
+
+
 
 
 

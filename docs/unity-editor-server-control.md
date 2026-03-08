@@ -34,9 +34,8 @@ If probe fails, host process is stopped and status becomes failed.
 
 - `Package Root Override`: optional absolute/relative override for package root.
 - `Dotnet Executable`: dotnet CLI executable path/name.
-- `Host Project Path`: default `Editor/Host~/UnityMcpServer.Host.csproj` (relative or absolute).
+- `Host Project Path`: default `Unity-MCP-Gateway/UnityMcpGateway.csproj` (relative or absolute).
   - Relative paths are auto-resolved from package root, project root, `Packages/com.blanketmen.mcp.bridge`, and `Library/PackageCache/com.blanketmen.mcp.bridge*`.
-  - Legacy fallback: `src/UnityMcpServer.Host/UnityMcpServer.Host.csproj`.
 - `Enabled Modules`: comma-separated module list; empty = schema defaults.
 - `Bridge Transport`: `http` or `pipe`.
 - `Bridge HTTP URL`: default `http://127.0.0.1:38100/`.
@@ -65,6 +64,12 @@ If probe fails, host process is stopped and status becomes failed.
 - `Host project not found`: verify `Host Project Path`; if needed set `Package Root Override` to force relative path root.
 - `startup probe failed`: ensure bridge transport/url/pipe settings match Unity bridge runtime.
 - Host not starting: verify `Dotnet Executable` and local .NET SDK installation.
+
+
+
+
+
+
 
 
 
