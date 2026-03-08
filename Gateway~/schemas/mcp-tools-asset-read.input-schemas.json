@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unity MCP Asset Read Tool Input Schemas",
+  "version": "0.1.0",
+  "$defs": {
+    "scenePath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.unity$",
+      "description": "Scene path under Assets/"
+    },
+    "guid": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{32}$",
+      "description": "Unity GUID"
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Asset path under Assets/"
+    },
+    "folderPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Folder path under Assets/"
+    },
+    "prefabPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.prefab$",
+      "description": "Prefab path under Assets/"
+    },
+    "assetRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "guid": {
+              "$ref": "#/$defs/guid"
+            }
+          },
+          "required": [
+            "guid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/assetPath"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "gameObjectRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "globalObjectId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "globalObjectId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scenePath": {
+              "$ref": "#/$defs/scenePath"
+            },
+            "hierarchyPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "scenePath",
+            "hierarchyPath"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "vec3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "transformInput": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationEuler": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "$ref": "#/$defs/vec3"
+        },
+        "local": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "mutateFlags": {
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "dryRun"
+            ]
+          },
+          "then": {
+            "required": [
+              "apply"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "apply"
+            ]
+          },
+          "then": {
+            "required": [
+              "dryRun"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "dryRun",
+              "apply"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": true
+                  },
+                  "apply": {
+                    "const": false
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": false
+                  },
+                  "apply": {
+                    "const": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "unity_asset_search",
+      "description": "Search assets by type/name/label/path.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "pathPrefixes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetPath"
+            },
+            "default": [
+              "Assets/"
+            ]
+          },
+          "includePackages": {
+            "type": "boolean",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "name",
+              "path",
+              "type",
+              "modifiedTime"
+            ],
+            "default": "path"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_asset_get",
+      "description": "Read one asset's metadata and optional graph info.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "includeDependencies": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeDependents": {
+            "type": "boolean",
+            "default": false
+          },
+          "includeMeta": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_asset_refs",
+      "description": "Traverse references for one asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "default": "inbound"
+          },
+          "recursive": {
+            "type": "boolean",
+            "default": false
+          },
+          "maxDepth": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "filterTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}
+

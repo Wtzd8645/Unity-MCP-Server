@@ -1,131 +1,56 @@
-# Unity MCP Server Skeleton (.NET 10)
+# Unity MCP Server (Package Root)
 
-This repository is organized as one main repo with two sub-repo directories:
+This repository is the Unity package root and contains two components:
 
-- `Unity-MCP-Gateway` (Gateway, previously Host)
-- `Unity-MCP-Bridge` (Unity bridge runtime/editor integration)
+- `Editor/`: Unity Editor control package source (HTTP/Named Pipe tool endpoint)
+- `Gateway~/`: MCP gateway source process (.NET, streamable HTTP)
 
-Current code layout:
-
-- Gateway code: `Unity-MCP-Gateway`
-- Bridge code: `Unity-MCP-Bridge/Editor`
-- Framework: `.NET 10` (`net10.0`)
-- Transport: `stdio` JSON-RPC with `Content-Length` framing
-- Implemented MCP methods:
-  - `initialize`
-  - `tools/list`
-  - `tools/call`
-- Bridge transports:
-  - `http` (`localhost`)
-  - `pipe` (`Named Pipe`)
-
-Tool metadata is loaded from:
-
-- `Unity-MCP-Gateway/schemas/mcp-tool-modules.json`
-- `Unity-MCP-Gateway/schemas/mcp-tools-*.input-schemas.json` (per enabled module)
-
-## Run
+## Clone
 
 ```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Unity-MCP-Gateway/UnityMcpGateway.csproj
+git clone <this-repo-url>
 ```
 
-Optional environment variables:
+## Repository Layout
 
-- `UNITY_MCP_ROOT`: override MCP root path lookup (directory containing `schemas/mcp-tool-modules.json`).
-- `UNITY_MCP_ENABLED_MODULES`: comma-separated module names.
-  Example: `core,diagnostics,scene_read`
-- `UNITY_MCP_BRIDGE_TRANSPORT`: `http` (default) or `pipe`
-- `UNITY_MCP_BRIDGE_HTTP_URL`: default `http://127.0.0.1:38100/`
-- `UNITY_MCP_BRIDGE_PIPE_NAME`: default `unity-mcp-bridge`
-- `UNITY_MCP_BRIDGE_TIMEOUT_MS`: request timeout in milliseconds (default `5000`)
-- `UNITY_MCP_ALLOWED_PATH_PREFIXES`: comma-separated path allowlist for write operations in Unity bridge (default `Assets/`).
-- `UNITY_MCP_ALLOWED_COMPONENT_TYPES`: comma-separated component allowlist patterns for mutation tools (default `*`; supports prefix wildcard like `MyGame.Components.*`).
-  - `unity.run_tests` will auto-extend bridge timeout based on `timeoutMs` argument.
+- `Editor/`: Control component source
+- `Gateway~/`: Gateway component source
+- `Documentation~/`: package documentation
 
-If `UNITY_MCP_ENABLED_MODULES` is not set, modules with `enabledByDefault=true` are loaded.
+## Run Gateway
 
-## Run from Unity Editor
+```bash
+DOTNET_CLI_HOME=/tmp dotnet run --project Gateway~/UnityMcpGateway.csproj
+```
 
-Unity package now supports a one-click "full server" flow:
+By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
 
-- Menu: `Tools/Unity MCP Bridge/Start Full Server`
-- Menu: `Tools/Unity MCP Bridge/Stop Full Server`
-- Window: `Tools/Unity MCP Bridge/Server Control`
+Common environment variables:
 
-In `Server Control`, configure:
+- `UNITY_MCP_ROOT` (default should point to `Gateway~/`)
+- `UNITY_MCP_ENABLED_MODULES`
+- `UNITY_MCP_GATEWAY_TRANSPORT` (`streamable-http` default, or `stdio`)
+- `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38110/mcp`)
+- `UNITY_MCP_CONTROL_TRANSPORT` (`http` or `pipe`)
+- `UNITY_MCP_CONTROL_HTTP_URL`
+- `UNITY_MCP_CONTROL_PIPE_NAME`
+- `UNITY_MCP_CONTROL_TIMEOUT_MS`
+- `UNITY_MCP_ALLOWED_PATH_PREFIXES`
+- `UNITY_MCP_ALLOWED_COMPONENT_TYPES`
 
-- `Dotnet Executable` (default: `dotnet`)
-- `Host Project Path` (default: `Unity-MCP-Gateway/UnityMcpGateway.csproj`)
-- Bridge transport / timeout and write allowlists
+## Unity Editor Side
 
-`Host Project Path` supports relative or absolute paths. For relative paths, the bridge resolves candidates against:
-- `Package Root Override` (if set)
-- resolved package root (`PackageInfo`)
-- Unity project root
-- `Packages/com.blanketmen.mcp.bridge`
-- `Library/PackageCache/com.blanketmen.mcp.bridge*`
+Use the Control package and open:
 
-Then click `Start Full Server` to:
+- `Tools/Unity MCP Control`
 
-1. Start Unity bridge (`UnityMcpBridgeServer`)
-2. Start host process (`dotnet run --project ...`)
-3. Run startup probe (`initialize` + `tools/list`)
+Current Unity editor tooling manages both:
 
-Important limitation:
+- Control endpoint lifecycle (start/stop and settings)
+- Gateway process lifecycle (start/stop/restart and process monitoring)
 
-- `UnityMcpGateway` currently uses stdio MCP transport only.
-- A host process started by Unity is suitable for Unity-side supervision and health checks, but external MCP clients normally still need to launch the host process themselves so they can own stdio.
+## Additional Docs
 
-## Current behavior
-
-- `tools/call` now forwards to Unity bridge over HTTP or Named Pipe.
-- `tools/call` now validates `arguments` against each tool's `inputSchema` before forwarding.
-- Unity bridge currently implements:
-  - `unity.ping`
-  - `unity.project_info`
-  - `unity.playmode_status`
-  - `unity.playmode_start`
-  - `unity.playmode_stop`
-  - `unity.list_scenes`
-  - `unity.open_scene`
-  - `unity.get_console_logs`
-  - `unity.clear_console`
-  - `unity.go_find`
-  - `unity.component_get_fields`
-  - `unity.go_create`
-  - `unity.go_delete`
-  - `unity.go_duplicate`
-  - `unity.go_reparent`
-  - `unity.go_rename`
-  - `unity.go_set_active`
-  - `unity.component_add`
-  - `unity.component_remove`
-  - `unity.component_set_fields`
-  - `unity.asset_search`
-  - `unity.asset_get`
-  - `unity.asset_refs`
-  - `unity.prefab_create`
-  - `unity.prefab_instantiate`
-  - `unity.prefab_apply_overrides`
-  - `unity.prefab_revert_overrides`
-  - `unity.prefab_unpack`
-  - `unity.prefab_create_variant`
-  - `unity.asset_move`
-  - `unity.asset_rename`
-  - `unity.asset_delete_to_trash`
-  - `unity.asset_reimport`
-  - `unity.asset_set_labels`
-- `unity.run_tests` is implemented via Unity Test Framework reflection APIs (requires `com.unity.test-framework`).
-  - when `includeXmlReportPath=true`, bridge writes `Library/McpReports/latest-test-results.xml`.
-- Selective include flags for `prefab_apply_overrides` / `prefab_revert_overrides` are currently `unsupported` (all include flags must be `true`).
-
-
-
-
-
-
-
-
-
-
+- [Control overview](Documentation~/unity-mcp-control.md)
+- [Editor control](Documentation~/unity-editor-control.md)
+- [Tool modules](Documentation~/mcp-tool-modules.md)

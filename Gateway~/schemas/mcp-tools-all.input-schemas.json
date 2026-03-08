@@ -1,0 +1,1519 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unity MCP All Tool Input Schemas",
+  "version": "0.1.0",
+  "$defs": {
+    "scenePath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.unity$",
+      "description": "Scene path under Assets/"
+    },
+    "guid": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{32}$",
+      "description": "Unity GUID"
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Asset path under Assets/"
+    },
+    "folderPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*$",
+      "description": "Folder path under Assets/"
+    },
+    "prefabPath": {
+      "type": "string",
+      "pattern": "^Assets\\/.*\\.prefab$",
+      "description": "Prefab path under Assets/"
+    },
+    "assetRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "guid": {
+              "$ref": "#/$defs/guid"
+            }
+          },
+          "required": [
+            "guid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/assetPath"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "gameObjectRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "globalObjectId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "globalObjectId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scenePath": {
+              "$ref": "#/$defs/scenePath"
+            },
+            "hierarchyPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "scenePath",
+            "hierarchyPath"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "vec3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "transformInput": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationEuler": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "$ref": "#/$defs/vec3"
+        },
+        "local": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "mutateFlags": {
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "dryRun"
+            ]
+          },
+          "then": {
+            "required": [
+              "apply"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "apply"
+            ]
+          },
+          "then": {
+            "required": [
+              "dryRun"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "dryRun",
+              "apply"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": true
+                  },
+                  "apply": {
+                    "const": false
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dryRun",
+                  "apply"
+                ],
+                "properties": {
+                  "dryRun": {
+                    "const": false
+                  },
+                  "apply": {
+                    "const": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "unity_ping",
+      "description": "Verify control connectivity and editor heartbeat.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_info",
+      "description": "Return project/runtime/editor basics.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includePlatformMatrix": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_list_scenes",
+      "description": "List scenes from Build Settings and/or project assets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "buildSettings",
+              "assets",
+              "both"
+            ],
+            "default": "both"
+          },
+          "includeDisabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_open_scene",
+      "description": "Open a scene in Editor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "openMode": {
+            "type": "string",
+            "enum": [
+              "Single",
+              "Additive",
+              "AdditiveWithoutLoading"
+            ],
+            "default": "Single"
+          },
+          "saveModifiedScenes": {
+            "type": "boolean",
+            "default": false
+          },
+          "setActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "scenePath"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_playmode_status",
+      "description": "Query play mode runtime state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_playmode_start",
+      "description": "Enter play mode and optionally wait until state transition completes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "waitForEntered": {
+            "type": "boolean",
+            "default": true
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000,
+            "default": 15000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_playmode_stop",
+      "description": "Exit play mode and optionally wait until complete.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "waitForExited": {
+            "type": "boolean",
+            "default": true
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000,
+            "default": 15000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_get_console_logs",
+      "description": "Read Unity Console messages with incremental polling.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "log",
+                "warning",
+                "error",
+                "exception",
+                "assert"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "sinceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000,
+            "default": 200
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "desc"
+          },
+          "includeStackTrace": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_clear_console",
+      "description": "Clear Unity Console.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_run_tests",
+      "description": "Run Unity Test Framework tests (defaults to EditMode).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "EditMode",
+              "PlayMode"
+            ],
+            "default": "EditMode"
+          },
+          "filter": {
+            "type": "object",
+            "properties": {
+              "assemblyNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "testNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "categoryNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 5000,
+            "maximum": 3600000,
+            "default": 600000
+          },
+          "includePassed": {
+            "type": "boolean",
+            "default": false
+          },
+          "includeXmlReportPath": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_asset_search",
+      "description": "Search assets by type/name/label/path.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "pathPrefixes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetPath"
+            },
+            "default": [
+              "Assets/"
+            ]
+          },
+          "includePackages": {
+            "type": "boolean",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "name",
+              "path",
+              "type",
+              "modifiedTime"
+            ],
+            "default": "path"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_asset_get",
+      "description": "Read one asset's metadata and optional graph info.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "includeDependencies": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeDependents": {
+            "type": "boolean",
+            "default": false
+          },
+          "includeMeta": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_asset_refs",
+      "description": "Traverse references for one asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "default": "inbound"
+          },
+          "recursive": {
+            "type": "boolean",
+            "default": false
+          },
+          "maxDepth": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "filterTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_go_find",
+      "description": "Find scene objects by conditions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "namePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "hasComponents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "hierarchyPathPrefix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inSelection": {
+            "type": "boolean",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_go_create",
+      "description": "Create a new GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "transform": {
+            "$ref": "#/$defs/transformInput"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_go_delete",
+      "description": "Delete one or many GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "undoable",
+              "immediate"
+            ],
+            "default": "undoable"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_go_duplicate",
+      "description": "Duplicate one or many GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "parent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "renamePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_go_reparent",
+      "description": "Move objects under a new parent (or scene root).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "newParent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "worldPositionStays": {
+            "type": "boolean",
+            "default": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_go_rename",
+      "description": "Rename a GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "newName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "newName"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_go_set_active",
+      "description": "Set active state for GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets",
+          "active"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_component_add",
+      "description": "Add a component to a GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "componentType"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_component_remove",
+      "description": "Remove one component from a GameObject by type or component id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          },
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "componentType"
+                ]
+              },
+              {
+                "required": [
+                  "componentId"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_component_get_fields",
+      "description": "Read serialized fields from a component.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "includePrivateSerialized": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_component_set_fields",
+      "description": "Set serialized fields on a component.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fields": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": true
+          },
+          "strict": {
+            "type": "boolean",
+            "default": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "fields"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_create",
+      "description": "Save a scene object as a prefab.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "outputPath": {
+            "$ref": "#/$defs/prefabPath"
+          },
+          "connectToInstance": {
+            "type": "boolean",
+            "default": true
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "source",
+          "outputPath"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_instantiate",
+      "description": "Instantiate a prefab into a scene.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prefab": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "parent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "transform": {
+            "$ref": "#/$defs/transformInput"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "prefab"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_apply_overrides",
+      "description": "Apply prefab overrides from instances to source prefabs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "includePropertyOverrides": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeAddedComponents": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeRemovedComponents": {
+            "type": "boolean",
+            "default": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "instances"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_revert_overrides",
+      "description": "Revert prefab overrides on instances.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "includePropertyOverrides": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeAddedComponents": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeRemovedComponents": {
+            "type": "boolean",
+            "default": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "instances"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_unpack",
+      "description": "Unpack prefab instances.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "OutermostRoot",
+              "Completely"
+            ],
+            "default": "OutermostRoot"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "instances"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_prefab_create_variant",
+      "description": "Create a prefab variant from base prefab (optionally using instance overrides).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "basePrefab": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "outputPath": {
+            "$ref": "#/$defs/prefabPath"
+          },
+          "sourceInstance": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "basePrefab",
+          "outputPath"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_move",
+      "description": "Move assets into a destination folder.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
+          },
+          "destinationFolder": {
+            "$ref": "#/$defs/folderPath"
+          },
+          "conflictPolicy": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "overwrite",
+              "rename"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets",
+          "destinationFolder"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_rename",
+      "description": "Rename an asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "newName": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\/]+$"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "newName"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_delete_to_trash",
+      "description": "Delete assets to OS trash/recycle bin.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_reimport",
+      "description": "Reimport one or many assets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
+          },
+          "recursive": {
+            "type": "boolean",
+            "default": false
+          },
+          "forceUpdate": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_set_labels",
+      "description": "Set/add/remove labels for an asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "set",
+              "add",
+              "remove"
+            ]
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "mode",
+          "labels"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    }
+  ]
+}
+
