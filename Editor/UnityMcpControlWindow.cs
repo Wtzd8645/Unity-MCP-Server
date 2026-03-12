@@ -21,17 +21,19 @@ namespace Blanketmen.UnityMcp.Control.Editor
             window = this;
             settings = UnityMcpGatewaySettings.Instance;
             settings.EnsureDefaults();
+            UnityMcpControlServer.StatusChanged += RepaintFromStatusChange;
         }
 
         private void OnDisable()
         {
+            UnityMcpControlServer.StatusChanged -= RepaintFromStatusChange;
             if (ReferenceEquals(window, this))
             {
                 window = null;
             }
         }
 
-        private void OnInspectorUpdate()
+        private void RepaintFromStatusChange()
         {
             Repaint();
         }
@@ -53,12 +55,15 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private void DrawStatusSection()
         {
             bool controlRunning = UnityMcpControlServer.IsRunning;
-            bool gatewayRunning = UnityMcpGatewayHost.IsRunning;
+            GatewayStatusSnapshot gatewaySnapshot = UnityMcpGatewayHost.GetStatusSnapshot();
+            bool gatewayRunning = gatewaySnapshot.State == GatewayProcessState.Starting ||
+                                 gatewaySnapshot.State == GatewayProcessState.Running ||
+                                 gatewaySnapshot.ManagedPid.HasValue;
             bool stackRunning = controlRunning || gatewayRunning;
-            string gatewayStatus = UnityMcpGatewayHost.State.ToString();
-            if (UnityMcpGatewayHost.ManagedPid.HasValue)
+            string gatewayStatus = gatewaySnapshot.State.ToString();
+            if (gatewaySnapshot.ManagedPid.HasValue)
             {
-                gatewayStatus += $" (PID {UnityMcpGatewayHost.ManagedPid.Value})";
+                gatewayStatus += $" (PID {gatewaySnapshot.ManagedPid.Value})";
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -73,18 +78,18 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 EditorGUILayout.LabelField(gatewayStatus, EditorStyles.boldLabel);
             }
 
-            if (UnityMcpGatewayHost.LastExitCode.HasValue)
+            if (gatewaySnapshot.LastExitCode.HasValue)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     EditorGUILayout.LabelField("Exit", EditorStyles.boldLabel, GUILayout.Width(60f));
-                    EditorGUILayout.LabelField(UnityMcpGatewayHost.LastExitCode.Value.ToString(), EditorStyles.label);
+                    EditorGUILayout.LabelField(gatewaySnapshot.LastExitCode.Value.ToString(), EditorStyles.label);
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(UnityMcpGatewayHost.LastError))
+            if (!string.IsNullOrWhiteSpace(gatewaySnapshot.LastError))
             {
-                EditorGUILayout.HelpBox(UnityMcpGatewayHost.LastError, MessageType.Warning);
+                EditorGUILayout.HelpBox(gatewaySnapshot.LastError, MessageType.Warning);
             }
 
             bool toggled = GUILayout.Toggle(
@@ -134,6 +139,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 string controlHttpUrl = EditorGUILayout.TextField("Control HTTP URL", settings.ControlHttpUrl);
                 string controlPipeName = EditorGUILayout.TextField("Control Pipe Name", settings.ControlPipeName);
                 int controlTimeoutMs = EditorGUILayout.IntField("Control Timeout (ms)", settings.ControlTimeoutMs);
+                int startupProbeTimeoutMs = EditorGUILayout.IntField("Gateway Startup Probe Timeout (ms)", settings.StartupProbeTimeoutMs);
                 string allowedPathPrefixes = EditorGUILayout.TextField("Allowed Path Prefixes", settings.AllowedPathPrefixes);
                 string allowedComponentTypes = EditorGUILayout.TextField("Allowed Component Types", settings.AllowedComponentTypes);
                 bool autoStartControlOnLoad = EditorGUILayout.Toggle("Auto Start Control On Load", settings.AutoStartControlOnLoad);
@@ -148,6 +154,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                     settings.ControlHttpUrl = controlHttpUrl;
                     settings.ControlPipeName = controlPipeName;
                     settings.ControlTimeoutMs = controlTimeoutMs;
+                    settings.StartupProbeTimeoutMs = startupProbeTimeoutMs;
                     settings.AllowedPathPrefixes = allowedPathPrefixes;
                     settings.AllowedComponentTypes = allowedComponentTypes;
                     settings.AutoStartControlOnLoad = autoStartControlOnLoad;

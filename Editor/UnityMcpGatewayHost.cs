@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
+using System.Threading;
 using UnityEditor;
 using UnityEngine;
 using Process = System.Diagnostics.Process;
@@ -19,6 +21,11 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private static int managedPid = -1;
         private static long managedStartTicks;
         private static bool stopRequested;
+        private static volatile bool startupProbeOutputObserved;
+        private static GatewayStatusSnapshot lastPublishedSnapshot;
+        private static bool hasPublishedSnapshot;
+
+        public static event Action StatusChanged;
 
         public static GatewayProcessState State { get; private set; } = GatewayProcessState.Stopped;
         public static int? ManagedPid => managedPid > 0 ? managedPid : (int?)null;
@@ -30,94 +37,109 @@ namespace Blanketmen.UnityMcp.Control.Editor
             get { return State == GatewayProcessState.Starting || State == GatewayProcessState.Running; }
         }
 
+        public static GatewayStatusSnapshot GetStatusSnapshot()
+        {
+            return new GatewayStatusSnapshot(State, ManagedPid, LastExitCode, LastError);
+        }
+
         static UnityMcpGatewayHost()
         {
             EditorApplication.update += MonitorManagedProcess;
             TryReattachManagedProcess();
+            PublishStatusChangedIfNeeded();
         }
 
         public static bool Start(UnityMcpGatewaySettings settings, out string error)
         {
-            error = string.Empty;
-            if (settings == null)
-            {
-                error = "Gateway settings are not available.";
-                LastError = error;
-                State = GatewayProcessState.Error;
-                return false;
-            }
-
-            if (TryEnsureManagedProcess())
-            {
-                State = GatewayProcessState.Running;
-                LastError = string.Empty;
-                return true;
-            }
-
-            string gatewayProjectPath = settings.ResolveGatewayProjectPath();
-            if (!File.Exists(gatewayProjectPath))
-            {
-                error = "Gateway project not found: " + gatewayProjectPath;
-                LastError = error;
-                State = GatewayProcessState.Error;
-                return false;
-            }
-
-            string gatewayProjectDirectory = Path.GetDirectoryName(gatewayProjectPath);
-            if (string.IsNullOrWhiteSpace(gatewayProjectDirectory))
-            {
-                error = "Failed to resolve Gateway project directory.";
-                LastError = error;
-                State = GatewayProcessState.Error;
-                return false;
-            }
-
-            ProcessStartInfo startInfo = BuildStartInfo(settings, gatewayProjectPath, gatewayProjectDirectory);
-
-            var process = new Process
-            {
-                StartInfo = startInfo,
-                EnableRaisingEvents = true,
-            };
-
             try
             {
-                if (!process.Start())
+                error = string.Empty;
+                if (settings == null)
                 {
-                    process.Dispose();
-                    error = "dotnet process start returned false.";
+                    error = "Gateway settings are not available.";
                     LastError = error;
                     State = GatewayProcessState.Error;
                     return false;
                 }
+
+                if (TryEnsureManagedProcess())
+                {
+                    State = GatewayProcessState.Running;
+                    LastError = string.Empty;
+                    return true;
+                }
+
+                string gatewayProjectPath = settings.ResolveGatewayProjectPath();
+                if (!File.Exists(gatewayProjectPath))
+                {
+                    error = "Gateway project not found: " + gatewayProjectPath;
+                    LastError = error;
+                    State = GatewayProcessState.Error;
+                    return false;
+                }
+
+                string gatewayProjectDirectory = Path.GetDirectoryName(gatewayProjectPath);
+                if (string.IsNullOrWhiteSpace(gatewayProjectDirectory))
+                {
+                    error = "Failed to resolve Gateway project directory.";
+                    LastError = error;
+                    State = GatewayProcessState.Error;
+                    return false;
+                }
+
+                ProcessStartInfo startInfo = BuildStartInfo(settings, gatewayProjectPath, gatewayProjectDirectory);
+
+                var process = new Process
+                {
+                    StartInfo = startInfo,
+                    EnableRaisingEvents = true,
+                };
+
+                try
+                {
+                    if (!process.Start())
+                    {
+                        process.Dispose();
+                        error = "dotnet process start returned false.";
+                        LastError = error;
+                        State = GatewayProcessState.Error;
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    process.Dispose();
+                    error = "Failed to start Gateway process: " + ex.Message;
+                    LastError = error;
+                    State = GatewayProcessState.Error;
+                    return false;
+                }
+
+                stopRequested = false;
+                LastExitCode = null;
+                LastError = string.Empty;
+                State = GatewayProcessState.Starting;
+                startupProbeOutputObserved = false;
+
+                AttachManagedProcess(process);
+                BeginLogForwarding(process);
+
+                if (!WaitForStartupProbe(process, settings.StartupProbeTimeoutMs, out string startupError))
+                {
+                    error = startupError;
+                    LastError = startupError;
+                    State = GatewayProcessState.Error;
+                    return false;
+                }
+
+                State = GatewayProcessState.Running;
+                LastError = string.Empty;
+                return true;
             }
-            catch (Exception ex)
+            finally
             {
-                process.Dispose();
-                error = "Failed to start Gateway process: " + ex.Message;
-                LastError = error;
-                State = GatewayProcessState.Error;
-                return false;
+                PublishStatusChangedIfNeeded();
             }
-
-            stopRequested = false;
-            LastExitCode = null;
-            LastError = string.Empty;
-            State = GatewayProcessState.Starting;
-
-            AttachManagedProcess(process);
-            BeginLogForwarding(process);
-            MonitorManagedProcess();
-
-            if (!IsRunning)
-            {
-                error = string.IsNullOrWhiteSpace(LastError)
-                    ? "Gateway process exited immediately."
-                    : LastError;
-                return false;
-            }
-
-            return true;
         }
 
         public static bool Restart(UnityMcpGatewaySettings settings, out string error)
@@ -128,45 +150,60 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
         public static void Stop()
         {
-            stopRequested = true;
-            LastError = string.Empty;
-            TryEnsureManagedProcess();
-
-            if (managedProcess == null)
-            {
-                ClearManagedIdentity();
-                State = GatewayProcessState.Stopped;
-                stopRequested = false;
-                return;
-            }
-
-            bool stopFailed = false;
-
             try
             {
-                if (!managedProcess.HasExited)
+                stopRequested = true;
+                LastError = string.Empty;
+                TryEnsureManagedProcess();
+
+                if (managedProcess == null)
                 {
-                    managedProcess.Kill();
-                    managedProcess.WaitForExit(StopWaitTimeoutMs);
+                    ClearManagedIdentity();
+                    State = GatewayProcessState.Stopped;
+                    stopRequested = false;
+                    return;
                 }
-            }
-            catch (Exception ex)
-            {
-                stopFailed = true;
-                LastError = "Failed to stop Gateway process: " + ex.Message;
-                State = GatewayProcessState.Error;
-                Debug.LogWarning("[UnityMcpGateway] " + LastError);
-            }
 
-            CaptureExitCode(managedProcess);
-            DetachManagedProcessHandle();
-            ClearManagedIdentity();
-            stopRequested = false;
+                bool stopFailed = false;
 
-            if (!stopFailed)
-            {
+                try
+                {
+                    if (!managedProcess.HasExited)
+                    {
+                        managedProcess.Kill();
+                        bool exited = managedProcess.WaitForExit(StopWaitTimeoutMs);
+                        if (!exited || !managedProcess.HasExited)
+                        {
+                            stopFailed = true;
+                            LastError = "Gateway process did not exit within stop timeout.";
+                            State = GatewayProcessState.Error;
+                            Debug.LogWarning("[UnityMcpGateway] " + LastError);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    stopFailed = true;
+                    LastError = "Failed to stop Gateway process: " + ex.Message;
+                    State = GatewayProcessState.Error;
+                    Debug.LogWarning("[UnityMcpGateway] " + LastError);
+                }
+
+                if (stopFailed)
+                {
+                    return;
+                }
+
+                CaptureExitCode(managedProcess);
+                DetachManagedProcessHandle();
+                ClearManagedIdentity();
+                stopRequested = false;
                 State = GatewayProcessState.Stopped;
                 LastError = string.Empty;
+            }
+            finally
+            {
+                PublishStatusChangedIfNeeded();
             }
         }
 
@@ -174,12 +211,14 @@ namespace Blanketmen.UnityMcp.Control.Editor
         {
             if (!TryEnsureManagedProcess())
             {
+                PublishStatusChangedIfNeeded();
                 return;
             }
 
             PersistManagedIdentity();
             DetachManagedProcessHandle();
             State = GatewayProcessState.Running;
+            PublishStatusChangedIfNeeded();
         }
 
         private static ProcessStartInfo BuildStartInfo(
@@ -221,22 +260,63 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
         private static string BuildDotnetRunArguments(string gatewayProjectPath)
         {
-            return "run --project " + QuoteArgument(gatewayProjectPath) + " --no-launch-profile";
+            return string.Join(
+                " ",
+                "run",
+                "--project",
+                EscapeCommandLineArgument(gatewayProjectPath),
+                "--no-launch-profile");
         }
 
-        private static string QuoteArgument(string value)
+        private static string EscapeCommandLineArgument(string value)
         {
             if (string.IsNullOrEmpty(value))
             {
                 return "\"\"";
             }
 
-            if (value.IndexOfAny(new[] { ' ', '\t', '"' }) < 0)
+            if (value.IndexOfAny(new[] { ' ', '\t', '\n', '\v', '"' }) < 0)
             {
                 return value;
             }
 
-            return "\"" + value.Replace("\"", "\\\"") + "\"";
+            var builder = new StringBuilder();
+            builder.Append('"');
+
+            int pendingBackslashes = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char ch = value[i];
+                if (ch == '\\')
+                {
+                    pendingBackslashes++;
+                    continue;
+                }
+
+                if (ch == '"')
+                {
+                    builder.Append('\\', pendingBackslashes * 2 + 1);
+                    builder.Append('"');
+                    pendingBackslashes = 0;
+                    continue;
+                }
+
+                if (pendingBackslashes > 0)
+                {
+                    builder.Append('\\', pendingBackslashes);
+                    pendingBackslashes = 0;
+                }
+
+                builder.Append(ch);
+            }
+
+            if (pendingBackslashes > 0)
+            {
+                builder.Append('\\', pendingBackslashes * 2);
+            }
+
+            builder.Append('"');
+            return builder.ToString();
         }
 
         private static void BeginLogForwarding(Process process)
@@ -261,6 +341,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 return;
             }
 
+            startupProbeOutputObserved = true;
             Debug.Log("[UnityMcpGateway] " + eventArgs.Data);
         }
 
@@ -271,6 +352,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 return;
             }
 
+            startupProbeOutputObserved = true;
             Debug.LogWarning("[UnityMcpGateway] " + eventArgs.Data);
         }
 
@@ -315,54 +397,61 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
         private static void MonitorManagedProcess()
         {
-            if (managedProcess == null)
-            {
-                return;
-            }
-
-            bool hasExited;
             try
             {
-                hasExited = managedProcess.HasExited;
-            }
-            catch (Exception ex)
-            {
-                LastError = "Failed to monitor Gateway process: " + ex.Message;
-                State = GatewayProcessState.Error;
-                return;
-            }
-
-            if (!hasExited)
-            {
-                if (State != GatewayProcessState.Running)
+                if (managedProcess == null)
                 {
-                    State = GatewayProcessState.Running;
+                    return;
                 }
 
-                return;
+                bool hasExited;
+                try
+                {
+                    hasExited = managedProcess.HasExited;
+                }
+                catch (Exception ex)
+                {
+                    LastError = "Failed to monitor Gateway process: " + ex.Message;
+                    State = GatewayProcessState.Error;
+                    return;
+                }
+
+                if (!hasExited)
+                {
+                    if (State != GatewayProcessState.Running)
+                    {
+                        State = GatewayProcessState.Running;
+                    }
+
+                    return;
+                }
+
+                CaptureExitCode(managedProcess);
+                DetachManagedProcessHandle();
+                ClearManagedIdentity();
+
+                if (stopRequested)
+                {
+                    State = GatewayProcessState.Stopped;
+                    LastError = string.Empty;
+                }
+                else
+                {
+                    State = LastExitCode.HasValue && LastExitCode.Value == 0
+                        ? GatewayProcessState.Exited
+                        : GatewayProcessState.Error;
+                    LastError = LastExitCode.HasValue
+                        ? $"Gateway process exited with code {LastExitCode.Value}."
+                        : "Gateway process exited unexpectedly.";
+                    Debug.LogWarning("[UnityMcpGateway] " + LastError);
+                }
+
+                stopRequested = false;
             }
-
-            CaptureExitCode(managedProcess);
-            DetachManagedProcessHandle();
-            ClearManagedIdentity();
-
-            if (stopRequested)
+            finally
             {
-                State = GatewayProcessState.Stopped;
-                LastError = string.Empty;
+                PublishStatusChangedIfNeeded();
             }
-            else
-            {
-                State = LastExitCode.HasValue && LastExitCode.Value == 0
-                    ? GatewayProcessState.Exited
-                    : GatewayProcessState.Error;
-                LastError = LastExitCode.HasValue
-                    ? $"Gateway process exited with code {LastExitCode.Value}."
-                    : "Gateway process exited unexpectedly.";
-                Debug.LogWarning("[UnityMcpGateway] " + LastError);
-            }
-
-            stopRequested = false;
         }
 
         private static bool TryReattachManagedProcess()
@@ -423,6 +512,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 LastError = string.Empty;
                 State = GatewayProcessState.Running;
                 PersistManagedIdentity();
+                BeginLogForwarding(process);
                 return true;
             }
             catch
@@ -538,6 +628,95 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
             managedProcess.Dispose();
             managedProcess = null;
+        }
+
+        private static bool WaitForStartupProbe(Process process, int timeoutMs, out string error)
+        {
+            error = string.Empty;
+            int probeTimeout = ClampStartupProbeTimeout(timeoutMs);
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(probeTimeout);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                bool hasExited;
+                try
+                {
+                    hasExited = process.HasExited;
+                }
+                catch (Exception ex)
+                {
+                    error = "Failed to probe Gateway startup: " + ex.Message;
+                    return false;
+                }
+
+                if (hasExited)
+                {
+                    CaptureExitCode(process);
+                    DetachManagedProcessHandle();
+                    ClearManagedIdentity();
+                    error = LastExitCode.HasValue
+                        ? $"Gateway process exited with code {LastExitCode.Value}."
+                        : "Gateway process exited unexpectedly during startup.";
+                    return false;
+                }
+
+                if (startupProbeOutputObserved)
+                {
+                    return true;
+                }
+
+                Thread.Sleep(25);
+            }
+
+            // Process-level startup probe: timeout without output is treated as success if process is alive.
+            try
+            {
+                if (process.HasExited)
+                {
+                    CaptureExitCode(process);
+                    DetachManagedProcessHandle();
+                    ClearManagedIdentity();
+                    error = LastExitCode.HasValue
+                        ? $"Gateway process exited with code {LastExitCode.Value}."
+                        : "Gateway process exited unexpectedly during startup.";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = "Failed to finalize Gateway startup probe: " + ex.Message;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static int ClampStartupProbeTimeout(int timeoutMs)
+        {
+            if (timeoutMs < 1000)
+            {
+                return 1000;
+            }
+
+            if (timeoutMs > 120000)
+            {
+                return 120000;
+            }
+
+            return timeoutMs;
+        }
+
+        private static void PublishStatusChangedIfNeeded()
+        {
+            GatewayStatusSnapshot snapshot = GetStatusSnapshot();
+            if (hasPublishedSnapshot && snapshot.Equals(lastPublishedSnapshot))
+            {
+                return;
+            }
+
+            lastPublishedSnapshot = snapshot;
+            hasPublishedSnapshot = true;
+            StatusChanged?.Invoke();
         }
     }
 }

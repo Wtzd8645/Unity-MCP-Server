@@ -18,6 +18,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private const string DefaultPipeName = "unity-mcp-control";
         private const int MainThreadTimeoutMs = 5000;
         private const int MaxLogBufferSize = 5000;
+        private const int PipeStartupTimeoutMs = 3000;
 
         private static readonly ConcurrentQueue<Action> MainThreadActions = new ConcurrentQueue<Action>();
         private static readonly UnityControlLogStore LogStore = new UnityControlLogStore(MaxLogBufferSize);
@@ -29,8 +30,24 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private static Thread httpThread;
         private static Thread pipeThread;
         private static bool autoStartChecked;
+        private static bool isRunning;
 
-        public static bool IsRunning { get; private set; }
+        public static event Action StatusChanged;
+
+        public static bool IsRunning
+        {
+            get { return isRunning; }
+            private set
+            {
+                if (isRunning == value)
+                {
+                    return;
+                }
+
+                isRunning = value;
+                PublishStatusChanged();
+            }
+        }
 
         static UnityMcpControlServer()
         {
@@ -39,6 +56,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
             EditorApplication.quitting += OnEditorQuitting;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             Application.logMessageReceivedThreaded += OnUnityLogReceived;
+            UnityMcpGatewayHost.StatusChanged += PublishStatusChanged;
             IsRunning = false;
         }
 
@@ -96,6 +114,8 @@ namespace Blanketmen.UnityMcp.Control.Editor
             if (!StartControlTransport(out ControlTransportKind transport, out string startError))
             {
                 IsRunning = false;
+                StopHttpServer();
+                StopPipeServer();
                 Debug.LogError("[UnityMcpControl] Start failed: " + startError);
                 return;
             }
@@ -129,12 +149,32 @@ namespace Blanketmen.UnityMcp.Control.Editor
             if (IsRunning)
             {
                 StopInternal(stopGateway: true);
-                Debug.Log("[UnityMcpControl] Stopped.");
+                GatewayStatusSnapshot gatewaySnapshot = UnityMcpGatewayHost.GetStatusSnapshot();
+                if (gatewaySnapshot.ManagedPid.HasValue)
+                {
+                    Debug.LogWarning(
+                        "[UnityMcpControl] Control stopped but Gateway process is still alive (PID " +
+                        gatewaySnapshot.ManagedPid.Value + ").");
+                }
+                else
+                {
+                    Debug.Log("[UnityMcpControl] Stopped.");
+                }
             }
-            else if (UnityMcpGatewayHost.IsRunning)
+            else if (UnityMcpGatewayHost.IsRunning || UnityMcpGatewayHost.ManagedPid.HasValue)
             {
                 UnityMcpGatewayHost.Stop();
-                Debug.Log("[UnityMcpControl] Gateway stopped.");
+                GatewayStatusSnapshot gatewaySnapshot = UnityMcpGatewayHost.GetStatusSnapshot();
+                if (gatewaySnapshot.ManagedPid.HasValue)
+                {
+                    Debug.LogWarning(
+                        "[UnityMcpControl] Gateway stop requested but process is still alive (PID " +
+                        gatewaySnapshot.ManagedPid.Value + ").");
+                }
+                else
+                {
+                    Debug.Log("[UnityMcpControl] Gateway stopped.");
+                }
             }
         }
 
@@ -349,21 +389,43 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private static bool StartPipeServer(out string error)
         {
             error = string.Empty;
+            var startupProbe = new PipeStartupProbe();
             try
             {
-                pipeThread = new Thread(PipeServerLoop)
+                pipeThread = new Thread(() => PipeServerLoop(startupProbe))
                 {
                     IsBackground = true,
                     Name = "UnityMcpControl.Pipe",
                 };
                 pipeThread.Start();
-                return true;
             }
             catch (Exception ex)
             {
                 error = "Pipe start failed: " + ex.Message;
                 return false;
             }
+
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(PipeStartupTimeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (startupProbe.Completed)
+                {
+                    if (startupProbe.Succeeded)
+                    {
+                        return true;
+                    }
+
+                    error = string.IsNullOrWhiteSpace(startupProbe.Error)
+                        ? "Pipe start failed."
+                        : startupProbe.Error;
+                    return false;
+                }
+
+                Thread.Sleep(10);
+            }
+
+            error = $"Pipe start timed out after {PipeStartupTimeoutMs}ms.";
+            return false;
         }
 
         private static void StopPipeServer()
@@ -377,18 +439,39 @@ namespace Blanketmen.UnityMcp.Control.Editor
             {
                 // Best effort: only used to unblock WaitForConnection.
             }
+
+            Thread thread = pipeThread;
+            if (thread != null && thread.IsAlive)
+            {
+                try
+                {
+                    thread.Join(200);
+                }
+                catch
+                {
+                    // Best effort only.
+                }
+            }
+
+            pipeThread = null;
         }
 
-        private static void PipeServerLoop()
+        private static void PipeServerLoop(PipeStartupProbe startupProbe)
         {
             NamedPipeServerStream server;
             try
             {
                 server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1);
+                startupProbe.Succeeded = true;
+                startupProbe.Error = string.Empty;
+                startupProbe.Completed = true;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[UnityMcpControl] Pipe server create failed: " + ex.Message);
+                startupProbe.Succeeded = false;
+                startupProbe.Error = "Pipe server create failed: " + ex.Message;
+                startupProbe.Completed = true;
+                Debug.LogWarning("[UnityMcpControl] " + startupProbe.Error);
                 return;
             }
 
@@ -540,6 +623,18 @@ namespace Blanketmen.UnityMcp.Control.Editor
         private static void OnUnityLogReceived(string condition, string stackTrace, LogType type)
         {
             LogStore.Add(condition, stackTrace, type);
+        }
+
+        private static void PublishStatusChanged()
+        {
+            StatusChanged?.Invoke();
+        }
+
+        private sealed class PipeStartupProbe
+        {
+            public volatile bool Completed;
+            public bool Succeeded;
+            public string Error = string.Empty;
         }
 
         private static ControlTransportKind ResolveTransport()
