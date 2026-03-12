@@ -11,7 +11,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
     internal sealed class UnityMcpGatewaySettings : ScriptableSingleton<UnityMcpGatewaySettings>
     {
         private const string DefaultDotnetExecutable = "dotnet";
-        private const string DefaultGatewayProjectRelativePath = "Unity-MCP-Gateway/UnityMcpGateway.csproj";
+        private const string DefaultGatewayProjectRelativePath = "Gateway~/UnityMcpGateway.csproj";
         private const string PackageName = "com.blanketmen.unity-mcp-server";
         private const ControlTransportKind DefaultControlTransport = ControlTransportKind.Http;
         private const string DefaultControlHttpUrl = "http://127.0.0.1:38100/";
@@ -310,6 +310,5 @@ namespace Blanketmen.UnityMcp.Control.Editor
         }
     }
 }
-
 
 

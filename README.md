@@ -1,9 +1,9 @@
-# Unity MCP Server (Main Repo)
+# Unity MCP Server (Package Root)
 
-This repository contains two components:
+This repository is the Unity package root and contains two components:
 
-- `Unity-MCP-Gateway`: MCP gateway process (.NET, streamable HTTP)
-- `Unity-MCP-Control`: Unity Editor control package (HTTP/Named Pipe tool endpoint)
+- `Editor/`: Unity Editor control package source (HTTP/Named Pipe tool endpoint)
+- `Gateway~/`: MCP gateway source process (.NET, streamable HTTP)
 
 ## Clone
 
@@ -13,21 +13,21 @@ git clone <this-repo-url>
 
 ## Repository Layout
 
-- `Unity-MCP-Gateway/`: Gateway component
-- `Unity-MCP-Control/`: Control component
-- `docs/`: cross-repo documentation in this main repo
+- `Editor/`: Control component source
+- `Gateway~/`: Gateway component source
+- `Documentation~/`: package documentation
 
 ## Run Gateway
 
 ```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Unity-MCP-Gateway/UnityMcpGateway.csproj
+DOTNET_CLI_HOME=/tmp dotnet run --project Gateway~/UnityMcpGateway.csproj
 ```
 
 By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
 
 Common environment variables:
 
-- `UNITY_MCP_ROOT` (default should point to `Unity-MCP-Gateway`)
+- `UNITY_MCP_ROOT` (default should point to `Gateway~/`)
 - `UNITY_MCP_ENABLED_MODULES`
 - `UNITY_MCP_GATEWAY_TRANSPORT` (`streamable-http` default, or `stdio`)
 - `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38110/mcp`)
@@ -48,6 +48,6 @@ Current Unity editor tooling manages only the Control endpoint lifecycle (start/
 
 ## Additional Docs
 
-- [Control overview](docs/unity-mcp-control.md)
-- [Editor control](docs/unity-editor-control.md)
-- [Tool modules](docs/mcp-tool-modules.md)
+- [Control overview](Documentation~/unity-mcp-control.md)
+- [Editor control](Documentation~/unity-editor-control.md)
+- [Tool modules](Documentation~/mcp-tool-modules.md)

@@ -5,8 +5,8 @@ This document describes the Unity Editor control side in the Unity MCP Server mo
 ## Position in architecture
 
 - Main repo: `Unity-MCP-Server`
-- Control component: `Unity-MCP-Control`
-- Gateway component: `Unity-MCP-Gateway`
+- Control component: `Editor/`
+- Gateway component: `Gateway~/`
 
 Control responsibilities:
 
