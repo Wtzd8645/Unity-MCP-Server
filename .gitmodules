@@ -1,6 +1,0 @@
-[submodule "Unity-MCP-Gateway"]
-	path = Unity-MCP-Gateway
-	url = https://github.com/Wtzd8645/Unity-MCP-Gateway.git
-[submodule "Unity-MCP-Bridge"]
-	path = Unity-MCP-Bridge
-	url = https://github.com/Wtzd8645/Unity-MCP-Bridge.git

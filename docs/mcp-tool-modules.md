@@ -53,7 +53,7 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 
 ## Operational docs
 
-- `docs/unity-editor-server-control.md`: Unity Editor bridge start/stop and bridge settings flow.
+- `docs/unity-editor-control.md`: Unity Editor control start/stop and control settings flow.
 
 ## Recommended default enablement
 
@@ -71,7 +71,6 @@ Goal: Split tools by domain and risk, with explicit `asset_read` / `asset_write`
 3. Full automation profile
 - Modules: all modules
 - Extra guardrails: path allowlist, type/component allowlist, `dryRun/apply` enforcement
-
 
 
 

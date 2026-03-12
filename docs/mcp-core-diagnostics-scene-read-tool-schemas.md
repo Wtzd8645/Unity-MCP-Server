@@ -32,7 +32,7 @@ Out of scope in this bundle:
 ### 2.1 Common response envelope
 
 ```ts
-type BridgeToolCallResponse = {
+type ControlToolCallResponse = {
   isError: boolean;
   contentText: string;
   structuredContentJson?: string; // JSON string of success payload or error payload
@@ -63,7 +63,7 @@ type ErrorStructuredContent = {
 
 ### 3.1 `unity_ping`
 
-Purpose: Verify bridge connectivity and editor heartbeat.
+Purpose: Verify control connectivity and editor heartbeat.
 
 Input:
 ```ts
@@ -74,7 +74,7 @@ Output:
 ```ts
 {
   connected: boolean;
-  bridgeVersion: string;
+  controlVersion: string;
   editor: {
     isResponding: boolean;
     isPlaying: boolean;

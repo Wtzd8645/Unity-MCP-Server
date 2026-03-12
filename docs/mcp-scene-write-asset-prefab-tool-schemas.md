@@ -36,7 +36,7 @@ Execution rule:
 ### 1.2 Common response envelope
 
 ```ts
-type BridgeToolCallResponse = {
+type ControlToolCallResponse = {
   isError: boolean;
   contentText: string;
   structuredContentJson?: string; // JSON string of success payload or error payload

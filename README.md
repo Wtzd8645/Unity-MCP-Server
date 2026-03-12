@@ -1,26 +1,20 @@
 # Unity MCP Server (Main Repo)
 
-This repository is the superproject for two Git submodules:
+This repository contains two components:
 
-- `Unity-MCP-Gateway`: MCP gateway process (.NET, stdio)
-- `Unity-MCP-Bridge`: Unity Editor bridge package (HTTP/Named Pipe tool endpoint)
+- `Unity-MCP-Gateway`: MCP gateway process (.NET, streamable HTTP)
+- `Unity-MCP-Control`: Unity Editor control package (HTTP/Named Pipe tool endpoint)
 
 ## Clone
 
 ```bash
-git clone --recurse-submodules <this-repo-url>
-```
-
-If you already cloned without submodules:
-
-```bash
-git submodule update --init --recursive
+git clone <this-repo-url>
 ```
 
 ## Repository Layout
 
-- `Unity-MCP-Gateway/`: Gateway submodule
-- `Unity-MCP-Bridge/`: Bridge submodule
+- `Unity-MCP-Gateway/`: Gateway component
+- `Unity-MCP-Control/`: Control component
 - `docs/`: cross-repo documentation in this main repo
 
 ## Run Gateway
@@ -29,27 +23,31 @@ git submodule update --init --recursive
 DOTNET_CLI_HOME=/tmp dotnet run --project Unity-MCP-Gateway/UnityMcpGateway.csproj
 ```
 
+By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
+
 Common environment variables:
 
 - `UNITY_MCP_ROOT` (default should point to `Unity-MCP-Gateway`)
 - `UNITY_MCP_ENABLED_MODULES`
-- `UNITY_MCP_BRIDGE_TRANSPORT` (`http` or `pipe`)
-- `UNITY_MCP_BRIDGE_HTTP_URL`
-- `UNITY_MCP_BRIDGE_PIPE_NAME`
-- `UNITY_MCP_BRIDGE_TIMEOUT_MS`
+- `UNITY_MCP_GATEWAY_TRANSPORT` (`streamable-http` default, or `stdio`)
+- `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38110/mcp`)
+- `UNITY_MCP_CONTROL_TRANSPORT` (`http` or `pipe`)
+- `UNITY_MCP_CONTROL_HTTP_URL`
+- `UNITY_MCP_CONTROL_PIPE_NAME`
+- `UNITY_MCP_CONTROL_TIMEOUT_MS`
 - `UNITY_MCP_ALLOWED_PATH_PREFIXES`
 - `UNITY_MCP_ALLOWED_COMPONENT_TYPES`
 
 ## Unity Editor Side
 
-Use the Bridge submodule package and open:
+Use the Control package and open:
 
-- `Tools/Unity MCP Bridge`
+- `Tools/Unity MCP Control`
 
-Current Editor control is bridge-only (start/stop bridge and bridge settings). Host process lifecycle is expected to be managed by external tools (for example IDE MCP launch config).
+Current Unity editor tooling manages only the Control endpoint lifecycle (start/stop and settings). Gateway process lifecycle is expected to be managed by external tools (for example IDE MCP launch config).
 
 ## Additional Docs
 
-- [Bridge overview](docs/unity-mcp-bridge.md)
-- [Editor bridge control](docs/unity-editor-server-control.md)
+- [Control overview](docs/unity-mcp-control.md)
+- [Editor control](docs/unity-editor-control.md)
 - [Tool modules](docs/mcp-tool-modules.md)

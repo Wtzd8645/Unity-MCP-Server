@@ -1,0 +1,10 @@
+{
+  "name": "com.blanketmen.unity-mcp-server",
+  "displayName": "Unity MCP Control",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "Unity MCP Control package.",
+  "author": {
+    "name": "Blanketmen"
+  }
+}
