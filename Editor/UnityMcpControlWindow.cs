@@ -44,23 +44,56 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 settings.EnsureDefaults();
             }
 
-            EditorGUILayout.LabelField("Unity MCP Control", EditorStyles.boldLabel, GUILayout.ExpandWidth(false));
+            EditorGUILayout.LabelField("Unity MCP Control + Gateway", EditorStyles.boldLabel, GUILayout.ExpandWidth(false));
             DrawStatusSection();
             EditorGUILayout.Space(8f);
             DrawSettingsSection();
         }
 
-        private static void DrawStatusSection()
+        private void DrawStatusSection()
         {
-            using (new EditorGUILayout.HorizontalScope())
+            bool controlRunning = UnityMcpControlServer.IsRunning;
+            bool gatewayRunning = UnityMcpGatewayHost.IsRunning;
+            bool stackRunning = controlRunning || gatewayRunning;
+            string gatewayStatus = UnityMcpGatewayHost.State.ToString();
+            if (UnityMcpGatewayHost.ManagedPid.HasValue)
             {
-                EditorGUILayout.LabelField("Status", EditorStyles.boldLabel, GUILayout.Width(60f));
-                EditorGUILayout.LabelField(UnityMcpControlServer.IsRunning ? "Running" : "Stopped", EditorStyles.boldLabel);
+                gatewayStatus += $" (PID {UnityMcpGatewayHost.ManagedPid.Value})";
             }
 
-            bool isRunning = UnityMcpControlServer.IsRunning;
-            bool toggled = GUILayout.Toggle(isRunning, isRunning ? "Stop Server" : "Start Server", "Button", GUILayout.Height(28f));
-            if (toggled != isRunning)
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Control", EditorStyles.boldLabel, GUILayout.Width(60f));
+                EditorGUILayout.LabelField(controlRunning ? "Running" : "Stopped", EditorStyles.boldLabel);
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Gateway", EditorStyles.boldLabel, GUILayout.Width(60f));
+                EditorGUILayout.LabelField(gatewayStatus, EditorStyles.boldLabel);
+            }
+
+            if (UnityMcpGatewayHost.LastExitCode.HasValue)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField("Exit", EditorStyles.boldLabel, GUILayout.Width(60f));
+                    EditorGUILayout.LabelField(UnityMcpGatewayHost.LastExitCode.Value.ToString(), EditorStyles.label);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(UnityMcpGatewayHost.LastError))
+            {
+                EditorGUILayout.HelpBox(UnityMcpGatewayHost.LastError, MessageType.Warning);
+            }
+
+            bool toggled = GUILayout.Toggle(
+                stackRunning,
+                stackRunning ? "Stop Control + Gateway" : "Start Control + Gateway",
+                "Button",
+                GUILayout.Height(28f));
+
+            if (toggled != stackRunning)
             {
                 if (toggled)
                 {
@@ -70,6 +103,18 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 {
                     UnityMcpControlServer.Stop();
                 }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                bool wasEnabled = GUI.enabled;
+                GUI.enabled = controlRunning;
+                if (GUILayout.Button("Restart Gateway"))
+                {
+                    UnityMcpControlServer.RestartGateway();
+                }
+
+                GUI.enabled = wasEnabled;
             }
         }
 
@@ -81,25 +126,32 @@ namespace Blanketmen.UnityMcp.Control.Editor
             {
                 EditorGUI.BeginChangeCheck();
 
+                string dotnetExecutable = EditorGUILayout.TextField("Dotnet Executable", settings.DotnetExecutable);
+                string gatewayProjectPath = EditorGUILayout.TextField("Gateway Project Path", settings.GatewayProjectPath);
+                string enabledModules = EditorGUILayout.TextField("Enabled Modules", settings.EnabledModules);
                 ControlTransportKind controlTransport = settings.ControlTransport;
                 controlTransport = (ControlTransportKind)EditorGUILayout.EnumPopup("Control Transport", controlTransport);
-
                 string controlHttpUrl = EditorGUILayout.TextField("Control HTTP URL", settings.ControlHttpUrl);
                 string controlPipeName = EditorGUILayout.TextField("Control Pipe Name", settings.ControlPipeName);
                 int controlTimeoutMs = EditorGUILayout.IntField("Control Timeout (ms)", settings.ControlTimeoutMs);
                 string allowedPathPrefixes = EditorGUILayout.TextField("Allowed Path Prefixes", settings.AllowedPathPrefixes);
                 string allowedComponentTypes = EditorGUILayout.TextField("Allowed Component Types", settings.AllowedComponentTypes);
-                bool autoStartGatewayOnLoad = EditorGUILayout.Toggle("Auto Start Control On Load", settings.AutoStartGatewayOnLoad);
+                bool autoStartControlOnLoad = EditorGUILayout.Toggle("Auto Start Control On Load", settings.AutoStartControlOnLoad);
+                bool autoStartGatewayWithControl = EditorGUILayout.Toggle("Auto Start Gateway With Control", settings.AutoStartGatewayWithControl);
 
                 if (EditorGUI.EndChangeCheck())
                 {
+                    settings.DotnetExecutable = dotnetExecutable;
+                    settings.GatewayProjectPath = gatewayProjectPath;
+                    settings.EnabledModules = enabledModules;
                     settings.ControlTransport = controlTransport;
                     settings.ControlHttpUrl = controlHttpUrl;
                     settings.ControlPipeName = controlPipeName;
                     settings.ControlTimeoutMs = controlTimeoutMs;
                     settings.AllowedPathPrefixes = allowedPathPrefixes;
                     settings.AllowedComponentTypes = allowedComponentTypes;
-                    settings.AutoStartGatewayOnLoad = autoStartGatewayOnLoad;
+                    settings.AutoStartControlOnLoad = autoStartControlOnLoad;
+                    settings.AutoStartGatewayWithControl = autoStartGatewayWithControl;
                 }
             }
 

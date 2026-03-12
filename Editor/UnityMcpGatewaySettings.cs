@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Blanketmen.UnityMcp.Control.Editor
@@ -34,7 +35,9 @@ namespace Blanketmen.UnityMcp.Control.Editor
         [SerializeField] private int startupProbeTimeoutMs = DefaultStartupProbeTimeoutMs;
         [SerializeField] private string allowedPathPrefixes = DefaultAllowedPathPrefixes;
         [SerializeField] private string allowedComponentTypes = DefaultAllowedComponentTypes;
-        [SerializeField] private bool autoStartGatewayOnLoad;
+        [FormerlySerializedAs("autoStartGatewayOnLoad")]
+        [SerializeField] private bool autoStartControlOnLoad = true;
+        [SerializeField] private bool autoStartGatewayWithControl = true;
 
         public string RepositoryRootOverride
         {
@@ -110,10 +113,16 @@ namespace Blanketmen.UnityMcp.Control.Editor
             set { allowedComponentTypes = string.IsNullOrWhiteSpace(value) ? DefaultAllowedComponentTypes : value.Trim(); }
         }
 
-        public bool AutoStartGatewayOnLoad
+        public bool AutoStartControlOnLoad
         {
-            get { return autoStartGatewayOnLoad; }
-            set { autoStartGatewayOnLoad = value; }
+            get { return autoStartControlOnLoad; }
+            set { autoStartControlOnLoad = value; }
+        }
+
+        public bool AutoStartGatewayWithControl
+        {
+            get { return autoStartGatewayWithControl; }
+            set { autoStartGatewayWithControl = value; }
         }
 
         public string ResolveRepositoryRoot()
@@ -259,6 +268,8 @@ namespace Blanketmen.UnityMcp.Control.Editor
             StartupProbeTimeoutMs = StartupProbeTimeoutMs;
             AllowedPathPrefixes = AllowedPathPrefixes;
             AllowedComponentTypes = AllowedComponentTypes;
+            AutoStartControlOnLoad = AutoStartControlOnLoad;
+            AutoStartGatewayWithControl = AutoStartGatewayWithControl;
         }
 
         private static string TryResolvePackageRoot()
@@ -310,5 +321,4 @@ namespace Blanketmen.UnityMcp.Control.Editor
         }
     }
 }
-
 

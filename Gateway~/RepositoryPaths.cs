@@ -8,8 +8,16 @@ public static class RepositoryPaths
         if (!string.IsNullOrWhiteSpace(overrideRoot))
         {
             string resolvedOverride = Path.GetFullPath(overrideRoot);
-            EnsureLooksLikeMcpRoot(resolvedOverride);
-            return resolvedOverride;
+            string? resolvedMcpRoot = TryResolveMcpRootFromCandidate(resolvedOverride);
+            if (resolvedMcpRoot is not null)
+            {
+                return resolvedMcpRoot;
+            }
+
+            throw new DirectoryNotFoundException(
+                "UNITY_MCP_ROOT does not contain a valid MCP schemas directory. " +
+                "Expected either '<root>/schemas/mcp-tool-modules.json' or " +
+                "'<root>/Gateway~/schemas/mcp-tool-modules.json'.");
         }
 
         string? fromCurrentDirectory = TryFindMcpRootFrom(Directory.GetCurrentDirectory());
@@ -26,17 +34,8 @@ public static class RepositoryPaths
 
         throw new DirectoryNotFoundException(
             "Could not locate MCP root. " +
-            "Set UNITY_MCP_ROOT to a directory containing schemas/mcp-tool-modules.json.");
-    }
-
-    private static void EnsureLooksLikeMcpRoot(string rootPath)
-    {
-        string manifestPath = Path.Combine(rootPath, "schemas", "mcp-tool-modules.json");
-        if (!File.Exists(manifestPath))
-        {
-            throw new DirectoryNotFoundException(
-                $"UNITY_MCP_ROOT does not contain '{manifestPath}'.");
-        }
+            "Set UNITY_MCP_ROOT to a directory containing schemas/mcp-tool-modules.json " +
+            "or Gateway~/schemas/mcp-tool-modules.json.");
     }
 
     private static string? TryFindMcpRootFrom(string startPath)
@@ -44,10 +43,10 @@ public static class RepositoryPaths
         DirectoryInfo? current = new(Path.GetFullPath(startPath));
         while (current is not null)
         {
-            string manifestPath = Path.Combine(current.FullName, "schemas", "mcp-tool-modules.json");
-            if (File.Exists(manifestPath))
+            string? resolved = TryResolveMcpRootFromCandidate(current.FullName);
+            if (resolved is not null)
             {
-                return current.FullName;
+                return resolved;
             }
 
             current = current.Parent;
@@ -55,8 +54,24 @@ public static class RepositoryPaths
 
         return null;
     }
+
+    private static string? TryResolveMcpRootFromCandidate(string rootPath)
+    {
+        string directManifestPath = Path.Combine(rootPath, "schemas", "mcp-tool-modules.json");
+        if (File.Exists(directManifestPath))
+        {
+            return rootPath;
+        }
+
+        string gatewayChildRoot = Path.Combine(rootPath, "Gateway~");
+        string gatewayChildManifestPath = Path.Combine(gatewayChildRoot, "schemas", "mcp-tool-modules.json");
+        if (File.Exists(gatewayChildManifestPath))
+        {
+            return gatewayChildRoot;
+        }
+
+        return null;
+    }
 }
-
-
 
 

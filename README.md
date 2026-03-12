@@ -44,7 +44,10 @@ Use the Control package and open:
 
 - `Tools/Unity MCP Control`
 
-Current Unity editor tooling manages only the Control endpoint lifecycle (start/stop and settings). Gateway process lifecycle is expected to be managed by external tools (for example IDE MCP launch config).
+Current Unity editor tooling manages both:
+
+- Control endpoint lifecycle (start/stop and settings)
+- Gateway process lifecycle (start/stop/restart and process monitoring)
 
 ## Additional Docs
 

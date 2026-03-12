@@ -41,5 +41,5 @@ Use `Tools/Unity MCP Control` for:
 
 ## Notes
 
-- Gateway process startup is not managed by control window.
+- Gateway process lifecycle is managed by the control window (start/stop/restart + process monitoring).
 - `unity_run_tests` is implemented via Unity Test Framework reflection APIs (`com.unity.test-framework`).

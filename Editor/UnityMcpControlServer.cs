@@ -37,7 +37,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
             EditorApplication.update += FlushMainThreadActions;
             EditorApplication.update += TryAutoStartControl;
             EditorApplication.quitting += OnEditorQuitting;
-            AssemblyReloadEvents.beforeAssemblyReload += StopInternal;
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             Application.logMessageReceivedThreaded += OnUnityLogReceived;
             IsRunning = false;
         }
@@ -59,61 +59,140 @@ namespace Blanketmen.UnityMcp.Control.Editor
             EditorApplication.update -= TryAutoStartControl;
 
             UnityMcpGatewaySettings settings = UnityMcpGatewaySettings.Instance;
-            if (settings.AutoStartGatewayOnLoad)
+            if (settings.AutoStartControlOnLoad)
             {
-                Start();
+                Start(settings.AutoStartGatewayWithControl);
             }
         }
 
         public static void Start()
         {
+            Start(startGatewayWithControl: true);
+        }
+
+        public static void Start(bool startGatewayWithControl)
+        {
             if (IsRunning)
             {
-                Debug.Log("[UnityMcpControl] Already running.");
+                if (startGatewayWithControl && !UnityMcpGatewayHost.IsRunning)
+                {
+                    if (!UnityMcpGatewayHost.Start(UnityMcpGatewaySettings.Instance, out string gatewayError))
+                    {
+                        Debug.LogError("[UnityMcpControl] Gateway start failed: " + gatewayError);
+                    }
+                    else
+                    {
+                        Debug.Log("[UnityMcpControl] Gateway started.");
+                    }
+                }
+                else
+                {
+                    Debug.Log("[UnityMcpControl] Already running.");
+                }
                 return;
             }
 
-            ControlTransportKind transport = ResolveTransport();
-            httpPrefix = ResolveHttpPrefix();
-            pipeName = ResolvePipeName();
             IsRunning = true;
+            if (!StartControlTransport(out ControlTransportKind transport, out string startError))
+            {
+                IsRunning = false;
+                Debug.LogError("[UnityMcpControl] Start failed: " + startError);
+                return;
+            }
 
             if (transport == ControlTransportKind.Pipe)
             {
-                StartPipeServer();
                 Debug.Log($"[UnityMcpControl] Started. Pipe: {pipeName}");
             }
             else
             {
-                StartHttpServer();
                 Debug.Log($"[UnityMcpControl] Started. HTTP: {httpPrefix}");
             }
+
+            if (!startGatewayWithControl)
+            {
+                return;
+            }
+
+            if (!UnityMcpGatewayHost.Start(UnityMcpGatewaySettings.Instance, out string gatewayStartError))
+            {
+                Debug.LogError("[UnityMcpControl] Gateway start failed: " + gatewayStartError);
+                StopInternal(stopGateway: false);
+                return;
+            }
+
+            Debug.Log("[UnityMcpControl] Gateway started.");
         }
 
         public static void Stop()
         {
             if (IsRunning)
             {
-                StopInternal();
+                StopInternal(stopGateway: true);
                 Debug.Log("[UnityMcpControl] Stopped.");
+            }
+            else if (UnityMcpGatewayHost.IsRunning)
+            {
+                UnityMcpGatewayHost.Stop();
+                Debug.Log("[UnityMcpControl] Gateway stopped.");
             }
         }
 
-        private static void StopInternal()
+        public static void RestartGateway()
+        {
+            if (!IsRunning)
+            {
+                Debug.LogWarning("[UnityMcpControl] Cannot restart Gateway while Control is stopped.");
+                return;
+            }
+
+            if (!UnityMcpGatewayHost.Restart(UnityMcpGatewaySettings.Instance, out string error))
+            {
+                Debug.LogError("[UnityMcpControl] Gateway restart failed: " + error);
+                return;
+            }
+
+            Debug.Log("[UnityMcpControl] Gateway restarted.");
+        }
+
+        private static bool StartControlTransport(out ControlTransportKind transport, out string error)
+        {
+            transport = ResolveTransport();
+            error = string.Empty;
+            httpPrefix = ResolveHttpPrefix();
+            pipeName = ResolvePipeName();
+
+            return transport == ControlTransportKind.Pipe
+                ? StartPipeServer(out error)
+                : StartHttpServer(out error);
+        }
+
+        private static void StopInternal(bool stopGateway)
         {
             IsRunning = false;
             StopHttpServer();
             StopPipeServer();
-            // Both stop methods are safe to call regardless of which was started.
+
+            if (stopGateway)
+            {
+                UnityMcpGatewayHost.Stop();
+            }
         }
 
         private static void OnEditorQuitting()
         {
-            StopInternal();
+            StopInternal(stopGateway: true);
         }
 
-        private static void StartHttpServer()
+        private static void OnBeforeAssemblyReload()
         {
+            UnityMcpGatewayHost.PrepareForAssemblyReload();
+            StopInternal(stopGateway: false);
+        }
+
+        private static bool StartHttpServer(out string error)
+        {
+            error = string.Empty;
             try
             {
                 httpListener = new HttpListener();
@@ -126,10 +205,22 @@ namespace Blanketmen.UnityMcp.Control.Editor
                     Name = "UnityMcpControl.Http",
                 };
                 httpThread.Start();
+                return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError("[UnityMcpControl] HTTP start failed: " + ex.Message);
+                error = "HTTP start failed: " + ex.Message;
+                try
+                {
+                    httpListener?.Close();
+                    httpListener = null;
+                }
+                catch
+                {
+                    // Best effort cleanup only.
+                }
+
+                return false;
             }
         }
 
@@ -255,14 +346,24 @@ namespace Blanketmen.UnityMcp.Control.Editor
             }
         }
 
-        private static void StartPipeServer()
+        private static bool StartPipeServer(out string error)
         {
-            pipeThread = new Thread(PipeServerLoop)
+            error = string.Empty;
+            try
             {
-                IsBackground = true,
-                Name = "UnityMcpControl.Pipe",
-            };
-            pipeThread.Start();
+                pipeThread = new Thread(PipeServerLoop)
+                {
+                    IsBackground = true,
+                    Name = "UnityMcpControl.Pipe",
+                };
+                pipeThread.Start();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = "Pipe start failed: " + ex.Message;
+                return false;
+            }
         }
 
         private static void StopPipeServer()
@@ -526,4 +627,3 @@ namespace Blanketmen.UnityMcp.Control.Editor
         }
     }
 }
-
