@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Editor Read Tool Input Schemas",
+  "title": "Unity MCP Project Write Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,58 +201,49 @@
   },
   "tools": [
     {
-      "name": "unity_editor_get_console_logs",
-      "description": "Read Unity Console messages with incremental polling.",
+      "name": "unity_project_set_build_scenes",
+      "description": "Replace the Build Settings scene list.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "levels": {
+          "scenes": {
             "type": "array",
+            "default": [],
             "items": {
-              "type": "string",
-              "enum": [
-                "log",
-                "warning",
-                "error",
-                "exception",
-                "assert"
-              ]
-            },
-            "uniqueItems": true
+              "type": "object",
+              "properties": {
+                "path": {
+                  "$ref": "#/$defs/scenePath"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false
+            }
           },
-          "sinceId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 2000,
-            "default": 200
-          },
-          "order": {
-            "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "default": "desc"
-          },
-          "includeStackTrace": {
+          "dryRun": {
             "type": "boolean",
             "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
           }
         },
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_editor_get_selection",
-      "description": "Read the current Unity Editor selection.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
+        "required": [
+          "scenes"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
       }
     }
   ]

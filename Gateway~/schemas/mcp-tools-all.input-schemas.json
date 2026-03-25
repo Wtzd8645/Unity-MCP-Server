@@ -224,6 +224,42 @@
       }
     },
     {
+      "name": "unity_project_get_build_settings",
+      "description": "Read active build target and Build Settings summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_list_build_scenes",
+      "description": "List scenes currently configured in Build Settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_get_player_settings",
+      "description": "Read common PlayerSettings values for the active build target.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_get_project_settings",
+      "description": "Read common project-wide editor settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "unity_project_run_tests",
       "description": "Run Unity Test Framework tests (defaults to EditMode).",
       "inputSchema": {
@@ -283,6 +319,101 @@
       }
     },
     {
+      "name": "unity_project_switch_build_target",
+      "description": "Switch the active Unity build target synchronously.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "buildTarget": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unity BuildTarget enum name."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 5000,
+            "maximum": 3600000,
+            "default": 600000
+          }
+        },
+        "required": [
+          "buildTarget"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_build_player",
+      "description": "Build the player for the current active build target using enabled Build Settings scenes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "outputPath": {
+            "type": "string",
+            "pattern": "^Builds\\/.*$|^Builds/.*$",
+            "minLength": 8,
+            "description": "Project-relative output path under Builds/."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 10000,
+            "maximum": 7200000,
+            "default": 1800000
+          }
+        },
+        "required": [
+          "outputPath"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_set_build_scenes",
+      "description": "Replace the Build Settings scene list.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenes": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "$ref": "#/$defs/scenePath"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "scenes"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
       "name": "unity_editor_get_console_logs",
       "description": "Read Unity Console messages with incremental polling.",
       "inputSchema": {
@@ -325,6 +456,60 @@
             "default": true
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_editor_get_selection",
+      "description": "Read the current Unity Editor selection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_editor_set_selection",
+      "description": "Replace the current Editor selection with scene objects and assets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "gameObjects"
+            ]
+          },
+          {
+            "required": [
+              "assets"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_editor_frame_selection",
+      "description": "Frame the current scene selection in the active SceneView.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
         "additionalProperties": false
       }
     },

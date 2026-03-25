@@ -9,15 +9,29 @@
       "enabledByDefault": true,
       "tools": [
         "unity_project_ping",
-        "unity_project_get_info"
+        "unity_project_get_info",
+        "unity_project_get_build_settings",
+        "unity_project_list_build_scenes",
+        "unity_project_get_player_settings",
+        "unity_project_get_project_settings"
       ]
     },
     {
       "name": "project_execute",
-      "risk": "low-medium",
+      "risk": "medium",
       "enabledByDefault": false,
       "tools": [
-        "unity_project_run_tests"
+        "unity_project_run_tests",
+        "unity_project_switch_build_target",
+        "unity_project_build_player"
+      ]
+    },
+    {
+      "name": "project_write",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_project_set_build_scenes"
       ]
     },
     {
@@ -25,7 +39,17 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_editor_get_console_logs"
+        "unity_editor_get_console_logs",
+        "unity_editor_get_selection"
+      ]
+    },
+    {
+      "name": "editor_execute",
+      "risk": "low-medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_editor_set_selection",
+        "unity_editor_frame_selection"
       ]
     },
     {

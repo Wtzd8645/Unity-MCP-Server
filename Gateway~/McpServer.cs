@@ -277,6 +277,22 @@ public sealed class McpServer
             return Math.Clamp(controlTimeout, 5000, 3900000);
         }
 
+        if (string.Equals(toolName, "unity_project_switch_build_target", StringComparison.Ordinal))
+        {
+            int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 600000);
+            timeoutMs = Math.Clamp(timeoutMs, 5000, 3600000);
+            int controlTimeout = timeoutMs + 30000;
+            return Math.Clamp(controlTimeout, 5000, 3900000);
+        }
+
+        if (string.Equals(toolName, "unity_project_build_player", StringComparison.Ordinal))
+        {
+            int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 1800000);
+            timeoutMs = Math.Clamp(timeoutMs, 10000, 7200000);
+            int controlTimeout = timeoutMs + 30000;
+            return Math.Clamp(controlTimeout, 10000, 7230000);
+        }
+
         if (string.Equals(toolName, "unity_runtime_start_playmode", StringComparison.Ordinal) ||
             string.Equals(toolName, "unity_runtime_stop_playmode", StringComparison.Ordinal))
         {

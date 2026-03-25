@@ -222,6 +222,42 @@
         },
         "additionalProperties": false
       }
+    },
+    {
+      "name": "unity_project_get_build_settings",
+      "description": "Read active build target and Build Settings summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_list_build_scenes",
+      "description": "List scenes currently configured in Build Settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_get_player_settings",
+      "description": "Read common PlayerSettings values for the active build target.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_get_project_settings",
+      "description": "Read common project-wide editor settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
     }
   ]
 }

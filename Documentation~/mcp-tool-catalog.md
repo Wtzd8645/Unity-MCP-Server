@@ -20,102 +20,114 @@ Current runtime tool names are the canonical names listed in the schema files an
 ## Module catalog
 
 1. `project_read`
-- Tools: `unity_project_ping`, `unity_project_get_info`
+- Tools: `unity_project_ping`, `unity_project_get_info`, `unity_project_get_build_settings`, `unity_project_list_build_scenes`, `unity_project_get_player_settings`, `unity_project_get_project_settings`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-project-read.input-schemas.json`
 
 2. `project_execute`
-- Tools: `unity_project_run_tests`
-- Risk: low-medium
+- Tools: `unity_project_run_tests`, `unity_project_switch_build_target`, `unity_project_build_player`
+- Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-project-execute.input-schemas.json`
 
-3. `editor_read`
-- Tools: `unity_editor_get_console_logs`
+3. `project_write`
+- Tools: `unity_project_set_build_scenes`
+- Risk: medium
+- Enabled by default: no
+- Schema: `Gateway~/schemas/mcp-tools-project-write.input-schemas.json`
+
+4. `editor_read`
+- Tools: `unity_editor_get_console_logs`, `unity_editor_get_selection`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-editor-read.input-schemas.json`
 
-4. `editor_write`
+5. `editor_execute`
+- Tools: `unity_editor_set_selection`, `unity_editor_frame_selection`
+- Risk: low-medium
+- Enabled by default: no
+- Schema: `Gateway~/schemas/mcp-tools-editor-execute.input-schemas.json`
+
+6. `editor_write`
 - Tools: `unity_editor_clear_console`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-editor-write.input-schemas.json`
 
-5. `runtime_read`
+7. `runtime_read`
 - Tools: `unity_runtime_get_playmode_status`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-runtime-read.input-schemas.json`
 
-6. `runtime_execute`
+8. `runtime_execute`
 - Tools: `unity_runtime_start_playmode`, `unity_runtime_stop_playmode`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-runtime-execute.input-schemas.json`
 
-7. `scene_read`
+9. `scene_read`
 - Tools: `unity_scene_list`, `unity_scene_list_loaded`, `unity_scene_get_active`, `unity_gameobject_find`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-scene-read.input-schemas.json`
 
-8. `scene_execute`
+10. `scene_execute`
 - Tools: `unity_scene_open`, `unity_scene_set_active`, `unity_scene_close`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-scene-execute.input-schemas.json`
 
-9. `scene_write`
+11. `scene_write`
 - Tools: `unity_scene_create`, `unity_scene_save`, `unity_scene_save_all`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-scene-write.input-schemas.json`
 
-10. `gameobject_read`
+12. `gameobject_read`
 - Tools: `unity_gameobject_get`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-gameobject-read.input-schemas.json`
 
-11. `component_read`
+13. `component_read`
 - Tools: `unity_component_list`, `unity_component_get_fields`, `unity_component_get_fields_batch`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-component-read.input-schemas.json`
 
-12. `gameobject_write`
+14. `gameobject_write`
 - Tools: `unity_gameobject_create`, `unity_gameobject_delete`, `unity_gameobject_duplicate`, `unity_gameobject_reparent`, `unity_gameobject_rename`, `unity_gameobject_set_active`, `unity_gameobject_set_transform`, `unity_gameobject_set_tag`, `unity_gameobject_set_layer`, `unity_gameobject_set_static`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-gameobject-write.input-schemas.json`
 
-13. `component_write`
+15. `component_write`
 - Tools: `unity_component_add`, `unity_component_remove`, `unity_component_set_fields`
 - Risk: medium
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-component-write.input-schemas.json`
 
-14. `prefab_read`
+16. `prefab_read`
 - Tools: `unity_prefab_get`, `unity_prefab_get_overrides`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-prefab-read.input-schemas.json`
 
-15. `prefab_write`
+17. `prefab_write`
 - Tools: `unity_prefab_create`, `unity_prefab_create_instance`, `unity_prefab_apply_overrides`, `unity_prefab_revert_overrides`, `unity_prefab_unpack`, `unity_prefab_create_variant`
 - Risk: medium-high
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-prefab-write.input-schemas.json`
 
-16. `asset_read`
+18. `asset_read`
 - Tools: `unity_asset_find`, `unity_asset_get`, `unity_asset_get_references`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-asset-read.input-schemas.json`
 
-17. `asset_write`
+19. `asset_write`
 - Tools: `unity_asset_move`, `unity_asset_rename`, `unity_asset_delete_to_trash`, `unity_asset_reimport`, `unity_asset_import`, `unity_asset_set_labels`, `unity_asset_copy`, `unity_asset_create_folder`, `unity_asset_create_text`, `unity_asset_create_material`, `unity_asset_create_scriptable_object`
 - Risk: high
 - Enabled by default: no
@@ -124,7 +136,7 @@ Current runtime tool names are the canonical names listed in the schema files an
 ## Recommended default enablement
 
 - Enabled by default: `project_read`, `editor_read`, `runtime_read`, `scene_read`, `gameobject_read`, `component_read`, `prefab_read`, `asset_read`
-- Disabled by default: `project_execute`, `editor_write`, `runtime_execute`, `scene_execute`, `scene_write`, `gameobject_write`, `component_write`, `prefab_write`, `asset_write`
+- Disabled by default: `project_execute`, `project_write`, `editor_execute`, `editor_write`, `runtime_execute`, `scene_execute`, `scene_write`, `gameobject_write`, `component_write`, `prefab_write`, `asset_write`
 
 ## Rollout profiles
 
@@ -132,7 +144,7 @@ Current runtime tool names are the canonical names listed in the schema files an
 - Modules: `project_read`, `editor_read`, `runtime_read`, `scene_read`, `gameobject_read`, `component_read`, `prefab_read`, `asset_read`
 
 2. Safe edit profile
-- Modules: `project_read`, `editor_read`, `runtime_read`, `scene_read`, `scene_execute`, `gameobject_read`, `component_read`, `prefab_read`, `gameobject_write`, `component_write`, `asset_read`
+- Modules: `project_read`, `editor_read`, `editor_execute`, `runtime_read`, `scene_read`, `scene_execute`, `gameobject_read`, `component_read`, `prefab_read`, `gameobject_write`, `component_write`, `asset_read`
 
 3. Full automation profile
 - Modules: all modules

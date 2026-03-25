@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Editor Read Tool Input Schemas",
+  "title": "Unity MCP Editor Execute Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,54 +201,44 @@
   },
   "tools": [
     {
-      "name": "unity_editor_get_console_logs",
-      "description": "Read Unity Console messages with incremental polling.",
+      "name": "unity_editor_set_selection",
+      "description": "Replace the current Editor selection with scene objects and assets.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "levels": {
+          "gameObjects": {
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "log",
-                "warning",
-                "error",
-                "exception",
-                "assert"
-              ]
+              "$ref": "#/$defs/gameObjectRef"
             },
-            "uniqueItems": true
+            "minItems": 1
           },
-          "sinceId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 2000,
-            "default": 200
-          },
-          "order": {
-            "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "default": "desc"
-          },
-          "includeStackTrace": {
-            "type": "boolean",
-            "default": true
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "gameObjects"
+            ]
+          },
+          {
+            "required": [
+              "assets"
+            ]
+          }
+        ]
       }
     },
     {
-      "name": "unity_editor_get_selection",
-      "description": "Read the current Unity Editor selection.",
+      "name": "unity_editor_frame_selection",
+      "description": "Frame the current scene selection in the active SceneView.",
       "inputSchema": {
         "type": "object",
         "properties": {},

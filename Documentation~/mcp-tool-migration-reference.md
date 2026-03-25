@@ -14,8 +14,18 @@ Current runtime tool names are the canonical names listed in `Gateway~/schemas/*
 
 - `unity_ping` -> `unity_project_ping`
 - `unity_project_info` -> `unity_project_get_info`
+- `unity_project_get_build_settings` -> `unity_project_get_build_settings`
+- `unity_project_list_build_scenes` -> `unity_project_list_build_scenes`
+- `unity_project_get_player_settings` -> `unity_project_get_player_settings`
+- `unity_project_get_project_settings` -> `unity_project_get_project_settings`
+- `unity_project_set_build_scenes` -> `unity_project_set_build_scenes`
+- `unity_project_switch_build_target` -> `unity_project_switch_build_target`
+- `unity_project_build_player` -> `unity_project_build_player`
 - `unity_run_tests` -> `unity_project_run_tests`
 - `unity_get_console_logs` -> `unity_editor_get_console_logs`
+- `unity_editor_get_selection` -> `unity_editor_get_selection`
+- `unity_editor_set_selection` -> `unity_editor_set_selection`
+- `unity_editor_frame_selection` -> `unity_editor_frame_selection`
 - `unity_clear_console` -> `unity_editor_clear_console`
 - `unity_playmode_status` -> `unity_runtime_get_playmode_status`
 - `unity_playmode_start` -> `unity_runtime_start_playmode`

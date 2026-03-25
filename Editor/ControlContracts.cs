@@ -81,6 +81,153 @@ namespace Blanketmen.UnityMcp.Control.Editor
     }
 
     [Serializable]
+    internal class ProjectGetBuildSettingsArgs
+    {
+    }
+
+    [Serializable]
+    internal class ProjectBuildSettingsResult
+    {
+        public string activeBuildTarget;
+        public string activeBuildTargetGroup;
+        public int sceneCount;
+        public int enabledSceneCount;
+    }
+
+    [Serializable]
+    internal class ProjectListBuildScenesArgs
+    {
+    }
+
+    [Serializable]
+    internal class ProjectBuildSceneItem
+    {
+        public string path;
+        public string name;
+        public string guid;
+        public bool enabled;
+        public int buildIndex;
+    }
+
+    [Serializable]
+    internal class ProjectListBuildScenesResult
+    {
+        public int count;
+        public int enabledCount;
+        public ProjectBuildSceneItem[] items;
+    }
+
+    [Serializable]
+    internal class ProjectBuildSceneInput
+    {
+        public string path;
+        public bool enabled = true;
+    }
+
+    [Serializable]
+    internal class ProjectSetBuildScenesArgs
+    {
+        public ProjectBuildSceneInput[] scenes;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class ProjectSetBuildScenesItem
+    {
+        public string path;
+        public string guid;
+        public bool enabled;
+        public int buildIndex;
+        public string status;
+        public bool changed;
+        public string message;
+    }
+
+    [Serializable]
+    internal class ProjectSetBuildScenesResult
+    {
+        public string tool;
+        public bool dryRun;
+        public bool applied;
+        public bool changed;
+        public int requested;
+        public int sceneCount;
+        public int enabledSceneCount;
+        public ProjectSetBuildScenesItem[] items;
+    }
+
+    [Serializable]
+    internal class ProjectGetPlayerSettingsArgs
+    {
+    }
+
+    [Serializable]
+    internal class ProjectPlayerSettingsResult
+    {
+        public string activeBuildTarget;
+        public string activeBuildTargetGroup;
+        public string companyName;
+        public string productName;
+        public string bundleVersion;
+        public string applicationIdentifier;
+        public bool runInBackground;
+    }
+
+    [Serializable]
+    internal class ProjectGetProjectSettingsArgs
+    {
+    }
+
+    [Serializable]
+    internal class ProjectSettingsResult
+    {
+        public string serializationMode;
+        public string externalVersionControl;
+        public bool enterPlayModeOptionsEnabled;
+        public string enterPlayModeOptions;
+    }
+
+    [Serializable]
+    internal class ProjectSwitchBuildTargetArgs
+    {
+        public string buildTarget;
+        public int timeoutMs = 600000;
+    }
+
+    [Serializable]
+    internal class ProjectSwitchBuildTargetResult
+    {
+        public bool changed;
+        public string buildTargetBefore;
+        public string buildTargetGroupBefore;
+        public string buildTargetAfter;
+        public string buildTargetGroupAfter;
+        public int elapsedMs;
+    }
+
+    [Serializable]
+    internal class ProjectBuildPlayerArgs
+    {
+        public string outputPath;
+        public int timeoutMs = 1800000;
+    }
+
+    [Serializable]
+    internal class ProjectBuildPlayerResult
+    {
+        public string buildTarget;
+        public string buildTargetGroup;
+        public string outputPath;
+        public string result;
+        public int sceneCount;
+        public int totalErrors;
+        public int totalWarnings;
+        public long totalSizeBytes;
+        public int durationMs;
+    }
+
+    [Serializable]
     internal class PlaymodeStatusStructuredContent
     {
         public bool isPlaying;
@@ -253,6 +400,55 @@ namespace Blanketmen.UnityMcp.Control.Editor
     {
         public bool cleared;
         public bool clearedEditorConsole;
+    }
+
+    [Serializable]
+    internal class GetSelectionArgs
+    {
+    }
+
+    [Serializable]
+    internal class EditorSelectionItem
+    {
+        public string kind;
+        public string name;
+        public string objectType;
+        public string globalObjectId;
+        public bool isPersistent;
+        public string assetPath;
+        public string guid;
+        public string scenePath;
+        public string hierarchyPath;
+    }
+
+    [Serializable]
+    internal class EditorSelectionResult
+    {
+        public int count;
+        public int gameObjectCount;
+        public int assetCount;
+        public EditorSelectionItem activeObject;
+        public EditorSelectionItem[] items;
+    }
+
+    [Serializable]
+    internal class SetSelectionArgs
+    {
+        public GameObjectRef[] gameObjects;
+        public AssetRef[] assets;
+    }
+
+    [Serializable]
+    internal class FrameSelectionArgs
+    {
+    }
+
+    [Serializable]
+    internal class FrameSelectionResult
+    {
+        public bool framed;
+        public int sceneSelectionCount;
+        public bool hasActiveSceneView;
     }
 
     internal sealed class ControlLogEntry

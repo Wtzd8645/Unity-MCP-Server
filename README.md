@@ -60,8 +60,8 @@ Current Unity editor tooling manages both:
 
 Current module taxonomy is target-first and operation-second, for example:
 
-- `project_read`, `project_execute`
-- `editor_read`, `editor_write`
+- `project_read`, `project_execute`, `project_write`
+- `editor_read`, `editor_execute`, `editor_write`
 - `runtime_read`, `runtime_execute`
 - `scene_read`, `scene_execute`, `scene_write`
 - `gameobject_read`, `gameobject_write`
@@ -69,4 +69,5 @@ Current module taxonomy is target-first and operation-second, for example:
 - `prefab_read`, `prefab_write`, `asset_read`, `asset_write`
 
 Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
+The current runtime foundation also includes editor selection tools, project build settings and player/project settings read surfaces, and a thin `project_execute` build pipeline for switching active build target and building players.
 The current `asset_write` foundation includes import/reimport, text creation, native asset creation, and copy/move style authoring surfaces under the same module.

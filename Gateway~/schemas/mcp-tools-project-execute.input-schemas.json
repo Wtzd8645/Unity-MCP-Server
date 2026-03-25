@@ -258,6 +258,55 @@
         },
         "additionalProperties": false
       }
+    },
+    {
+      "name": "unity_project_switch_build_target",
+      "description": "Switch the active Unity build target synchronously.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "buildTarget": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unity BuildTarget enum name."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 5000,
+            "maximum": 3600000,
+            "default": 600000
+          }
+        },
+        "required": [
+          "buildTarget"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_project_build_player",
+      "description": "Build the player for the current active build target using enabled Build Settings scenes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "outputPath": {
+            "type": "string",
+            "pattern": "^Builds\\/.*$|^Builds/.*$",
+            "minLength": 8,
+            "description": "Project-relative output path under Builds/."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 10000,
+            "maximum": 7200000,
+            "default": 1800000
+          }
+        },
+        "required": [
+          "outputPath"
+        ],
+        "additionalProperties": false
+      }
     }
   ]
 }

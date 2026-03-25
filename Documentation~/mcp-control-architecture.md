@@ -46,8 +46,8 @@ Current runtime tool names are the canonical names listed in the schema files an
 
 - `UnityMcpControlServer.cs`: control transport and request lifecycle
 - `ControlToolDispatcher.cs`: tool routing by active runtime name
-- `CoreToolHandlers.cs`: `project_*` and `runtime_*`
-- `DiagnosticsToolHandlers.cs`: `editor_*` and `project_execute`
+- `CoreToolHandlers.cs`: `project_read`, `project_write`, build-oriented `project_execute`, and `runtime_*`
+- `DiagnosticsToolHandlers.cs`: `editor_read`, `editor_execute`, `editor_write`, and test-oriented `project_execute`
 - `SceneReadToolHandlers.cs`: `scene_read`, `scene_execute`, `gameobject_read`, `component_read`
 - `SceneWriteToolHandlers.cs`: `scene_write`, `gameobject_write`, `component_write`
 - `PrefabReadToolHandlers.cs`: `prefab_read`
@@ -59,5 +59,5 @@ Current runtime tool names are the canonical names listed in the schema files an
 
 - `Documentation~/mcp-editor-control-window.md`: Unity window usage and troubleshooting
 - `Documentation~/mcp-tool-catalog.md`: module catalog and default enablement
-- `Documentation~/mcp-tool-schemas-runtime.md`: project, editor, runtime, and scene read-execute details
+- `Documentation~/mcp-tool-schemas-runtime.md`: project, editor, runtime, and scene runtime-facing details
 - `Documentation~/mcp-tool-schemas-authoring.md`: scene write, gameobject, component, prefab, and asset details
