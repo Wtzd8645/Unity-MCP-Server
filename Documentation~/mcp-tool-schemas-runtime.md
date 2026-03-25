@@ -19,7 +19,7 @@ This document is a summary. When there is any mismatch, the schema files and dis
 - `editor_write`: `unity_editor_clear_console`
 - `runtime_read`: `unity_runtime_get_playmode_status`
 - `runtime_execute`: `unity_runtime_start_playmode`, `unity_runtime_stop_playmode`
-- `scene_read`: `unity_scene_list`, `unity_scene_list_loaded`, `unity_scene_get_active`, `unity_gameobject_find`
+- `scene_read`: `unity_scene_list`, `unity_scene_list_loaded`, `unity_scene_get_active`
 - `scene_execute`: `unity_scene_open`, `unity_scene_set_active`, `unity_scene_close`
 
 ## Tool groups
@@ -53,7 +53,6 @@ This document is a summary. When there is any mismatch, the schema files and dis
 - `unity_scene_list`: scenes from Build Settings and or project assets
 - `unity_scene_list_loaded`: currently loaded scenes in editor order
 - `unity_scene_get_active`: active loaded scene summary
-- `unity_gameobject_find`: GameObject search within loaded scenes
 - `unity_scene_open`: open a scene asset into the editor
 - `unity_scene_set_active`: switch the active scene among loaded scenes
 - `unity_scene_close`: close a loaded scene, optionally saving first

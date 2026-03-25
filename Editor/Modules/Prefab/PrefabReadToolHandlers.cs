@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -12,53 +13,57 @@ namespace Blanketmen.UnityMcp.Editor.Modules
     {
         public static ControlToolCallResponse HandlePrefabGet(ControlToolCallRequest request)
         {
-            PrefabGetArgs args = ControlJson.ParseArgs(
+            PrefabGetAssetArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetArgs());
+                new PrefabGetAssetArgs());
 
-            bool hasPrefab = HasAssetRef(args.prefab);
-            bool hasInstance = HasGameObjectRef(args.instance);
-            if (hasPrefab == hasInstance)
+            if (!HasAssetRef(args.prefab))
             {
-                return ControlResponses.Error(
-                    "Provide exactly one of prefab or instance.",
-                    "invalid_argument",
-                    request.name);
+                return ControlResponses.Error("prefab is required.", "invalid_argument", request.name);
             }
 
-            if (hasPrefab)
+            if (!TryResolvePrefabAsset(args.prefab, request.name, out GameObject prefabAsset, out ControlToolCallResponse errorResponse))
             {
-                if (!TryResolvePrefabAsset(args.prefab, request.name, out GameObject prefabAsset, out ControlToolCallResponse errorResponse))
-                {
-                    return errorResponse;
-                }
-
-                var payload = new PrefabGetResult
-                {
-                    targetKind = "prefab",
-                    prefab = BuildPrefabAssetInfo(prefabAsset),
-                    sourcePrefab = BuildSourcePrefabInfo(prefabAsset),
-                    overrides = BuildPrefabOverrideSummary(null),
-                };
-
-                return ControlResponses.Success("unity_prefab_get completed.", payload);
+                return errorResponse;
             }
 
-            if (!TryResolvePrefabInstanceRoot(args.instance, request.name, out GameObject instanceRoot, out GameObject instancePrefabAsset, out ControlToolCallResponse instanceError))
+            var payload = new PrefabGetResult
             {
-                return instanceError;
+                targetKind = "prefab",
+                prefab = BuildPrefabAssetInfo(prefabAsset),
+                sourcePrefab = BuildSourcePrefabInfo(prefabAsset),
+                overrides = BuildPrefabOverrideSummary(null),
+            };
+
+            return ControlResponses.Success("unity_prefab_get completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandlePrefabGetInstance(ControlToolCallRequest request)
+        {
+            PrefabGetInstanceArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new PrefabGetInstanceArgs());
+
+            if (!HasGameObjectRef(args.instance))
+            {
+                return ControlResponses.Error("instance is required.", "invalid_argument", request.name);
             }
 
-            var instancePayload = new PrefabGetResult
+            if (!TryResolvePrefabInstanceRoot(args.instance, request.name, out GameObject instanceRoot, out GameObject prefabAsset, out ControlToolCallResponse errorResponse))
+            {
+                return errorResponse;
+            }
+
+            var payload = new PrefabGetResult
             {
                 targetKind = "instance",
-                prefab = BuildPrefabAssetInfo(instancePrefabAsset),
+                prefab = BuildPrefabAssetInfo(prefabAsset),
                 instance = BuildPrefabInstanceInfo(instanceRoot),
-                sourcePrefab = BuildSourcePrefabInfo(instancePrefabAsset),
+                sourcePrefab = BuildSourcePrefabInfo(prefabAsset),
                 overrides = BuildPrefabOverrideSummary(instanceRoot),
             };
 
-            return ControlResponses.Success("unity_prefab_get completed.", instancePayload);
+            return ControlResponses.Success("unity_prefab_get_instance completed.", payload);
         }
 
         public static ControlToolCallResponse HandlePrefabGetOverrides(ControlToolCallRequest request)
@@ -91,29 +96,172 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             return ControlResponses.Success("unity_prefab_get_overrides completed.", payload);
         }
 
+        public static ControlToolCallResponse HandlePrefabFindGameObjects(ControlToolCallRequest request)
+        {
+            PrefabFindGameObjectsArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new PrefabFindGameObjectsArgs
+                {
+                    layer = -1,
+                    limit = 200,
+                    offset = 0,
+                });
+
+            if (!HasAssetRef(args.prefab))
+            {
+                return ControlResponses.Error("prefab is required.", "invalid_argument", request.name);
+            }
+
+            if (!ControlReadSupport.TryLoadPrefabContents(args.prefab, request.name, out _, out GameObject prefabRoot, out ControlToolCallResponse errorResponse))
+            {
+                return errorResponse;
+            }
+
+            try
+            {
+                var matches = new List<PrefabFindGameObjectItem>();
+                var gameObjects = new List<GameObject>();
+                ControlReadSupport.CollectGameObjectsDepthFirst(prefabRoot, gameObjects);
+                for (int i = 0; i < gameObjects.Count; i++)
+                {
+                    GameObject gameObject = gameObjects[i];
+                    if (!MatchesPrefabGameObject(gameObject, args))
+                    {
+                        continue;
+                    }
+
+                    matches.Add(new PrefabFindGameObjectItem
+                    {
+                        hierarchyPath = ControlReadSupport.BuildHierarchyPath(gameObject.transform),
+                        name = gameObject.name,
+                        activeSelf = gameObject.activeSelf,
+                        tag = gameObject.tag,
+                        layer = gameObject.layer,
+                        componentTypes = ControlReadSupport.GetComponentTypeNames(gameObject),
+                    });
+                }
+
+                int total = matches.Count;
+                PaginationRange range = ControlUtil.BuildPaginationRange(total, args.offset, args.limit, 1000);
+                List<PrefabFindGameObjectItem> page = matches.Skip(range.offset).Take(range.limit).ToList();
+
+                var payload = new PrefabFindGameObjectsResult
+                {
+                    total = total,
+                    items = page.ToArray(),
+                };
+
+                return ControlResponses.Success("unity_prefab_find_gameobjects completed.", payload);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        public static ControlToolCallResponse HandlePrefabGetGameObject(ControlToolCallRequest request)
+        {
+            PrefabGetGameObjectArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new PrefabGetGameObjectArgs
+                {
+                    includeChildren = true,
+                    childLimit = 100,
+                });
+
+            if (!HasAssetRef(args.prefab))
+            {
+                return ControlResponses.Error("prefab is required.", "invalid_argument", request.name);
+            }
+
+            if (string.IsNullOrEmpty(args.hierarchyPath))
+            {
+                return ControlResponses.Error("hierarchyPath is required.", "invalid_argument", request.name);
+            }
+
+            if (!ControlReadSupport.TryLoadPrefabContents(args.prefab, request.name, out string prefabPath, out GameObject prefabRoot, out ControlToolCallResponse errorResponse))
+            {
+                return errorResponse;
+            }
+
+            try
+            {
+                if (!ControlReadSupport.TryResolvePrefabContentGameObject(prefabRoot, args.hierarchyPath, out GameObject gameObject, out string resolveError))
+                {
+                    return ControlResponses.Error(resolveError, "not_found", request.name);
+                }
+
+                int childLimit = ControlUtil.Clamp(args.childLimit, 1, 500, 100);
+                PrefabGameObjectGetResult payload = ControlReadSupport.BuildPrefabGameObjectGetResult(prefabPath, gameObject, args.includeChildren, childLimit);
+                return ControlResponses.Success("unity_prefab_get_gameobject completed.", payload);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        public static ControlToolCallResponse HandlePrefabGetComponentFields(ControlToolCallRequest request)
+        {
+            PrefabGetComponentFieldsArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new PrefabGetComponentFieldsArgs
+                {
+                    componentIndex = -1,
+                    includePrivateSerialized = false,
+                });
+
+            if (!HasAssetRef(args.prefab))
+            {
+                return ControlResponses.Error("prefab is required.", "invalid_argument", request.name);
+            }
+
+            if (string.IsNullOrEmpty(args.hierarchyPath))
+            {
+                return ControlResponses.Error("hierarchyPath is required.", "invalid_argument", request.name);
+            }
+
+            if (!ControlReadSupport.TryLoadPrefabContents(args.prefab, request.name, out string prefabPath, out GameObject prefabRoot, out ControlToolCallResponse errorResponse))
+            {
+                return errorResponse;
+            }
+
+            try
+            {
+                if (!ControlReadSupport.TryResolvePrefabContentGameObject(prefabRoot, args.hierarchyPath, out GameObject gameObject, out string resolveError))
+                {
+                    return ControlResponses.Error(resolveError, "not_found", request.name);
+                }
+
+                if (!ControlReadSupport.TryResolveComponentByIndex(gameObject, args.componentIndex, out Component component, out string componentError))
+                {
+                    return ControlResponses.Error(componentError, "invalid_argument", request.name);
+                }
+
+                var payload = new PrefabGetComponentFieldsResult
+                {
+                    prefabPath = prefabPath,
+                    hierarchyPath = ControlReadSupport.BuildHierarchyPath(gameObject.transform),
+                    componentIndex = args.componentIndex,
+                    componentType = component.GetType().FullName ?? component.GetType().Name,
+                    fields = ControlReadSupport.ExtractSerializedComponentFields(component, args.includePrivateSerialized).ToArray(),
+                };
+
+                return ControlResponses.Success("unity_prefab_get_component_fields completed.", payload);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
         private static bool TryResolvePrefabAsset(
             AssetRef prefabRef,
             string toolName,
             out GameObject prefabAsset,
             out ControlToolCallResponse errorResponse)
         {
-            prefabAsset = null;
-            errorResponse = null;
-
-            if (!ControlWriteSupport.TryResolveAssetRef(prefabRef, out string prefabPath, out _))
-            {
-                errorResponse = ControlResponses.Error("Prefab target not found.", "not_found", toolName);
-                return false;
-            }
-
-            prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefabAsset == null || !PrefabUtility.IsPartOfPrefabAsset(prefabAsset))
-            {
-                errorResponse = ControlResponses.Error("Target is not a prefab asset: " + prefabPath, "invalid_argument", toolName);
-                return false;
-            }
-
-            return true;
+            return ControlReadSupport.TryResolvePrefabAsset(prefabRef, toolName, out _, out prefabAsset, out errorResponse);
         }
 
         private static bool TryResolvePrefabInstanceRoot(
@@ -225,6 +373,48 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 addedGameObjectCount = instanceRoot == null ? 0 : InvokePrefabUtilityList("GetAddedGameObjects", instanceRoot).Length,
                 removedGameObjectCount = instanceRoot == null ? 0 : InvokePrefabUtilityList("GetRemovedGameObjects", instanceRoot).Length,
             };
+        }
+
+        private static bool MatchesPrefabGameObject(GameObject gameObject, PrefabFindGameObjectsArgs args)
+        {
+            if (!string.IsNullOrEmpty(args.namePattern) &&
+                gameObject.name.IndexOf(args.namePattern, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(args.tag) &&
+                !string.Equals(gameObject.tag, args.tag, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (args.layer >= 0 && gameObject.layer != args.layer)
+            {
+                return false;
+            }
+
+            if (args.hasComponents != null && args.hasComponents.Length > 0)
+            {
+                for (int i = 0; i < args.hasComponents.Length; i++)
+                {
+                    if (!ControlReadSupport.HasComponentType(gameObject, args.hasComponents[i]))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(args.hierarchyPathPrefix))
+            {
+                string hierarchyPath = ControlReadSupport.BuildHierarchyPath(gameObject.transform);
+                if (!hierarchyPath.StartsWith(args.hierarchyPathPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static PrefabPropertyOverrideItem[] BuildPropertyOverrideItems(GameObject instanceRoot)
@@ -494,39 +684,17 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
         private static string TryGetGlobalObjectId(UnityEngine.Object obj)
         {
-            return obj == null ? null : GlobalObjectId.GetGlobalObjectIdSlow(obj).ToString();
+            return ControlReadSupport.TryGetGlobalObjectId(obj);
         }
 
         private static string BuildHierarchyPath(UnityEngine.Object obj)
         {
-            switch (obj)
-            {
-                case GameObject gameObject:
-                    return BuildHierarchyPath(gameObject.transform);
-                case Component component:
-                    return BuildHierarchyPath(component.transform);
-                default:
-                    return null;
-            }
+            return ControlReadSupport.BuildHierarchyPath(obj);
         }
 
         private static string BuildHierarchyPath(Transform transform)
         {
-            if (transform == null)
-            {
-                return null;
-            }
-
-            var parts = new List<string>();
-            Transform current = transform;
-            while (current != null)
-            {
-                parts.Add(current.name);
-                current = current.parent;
-            }
-
-            parts.Reverse();
-            return string.Join("/", parts);
+            return ControlReadSupport.BuildHierarchyPath(transform);
         }
 
         private static bool HasAssetRef(AssetRef assetRef)

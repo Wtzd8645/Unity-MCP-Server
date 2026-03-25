@@ -930,9 +930,115 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetArgs
+    internal class PrefabFindGameObjectsArgs
     {
         public AssetRef prefab;
+        public string namePattern;
+        public string tag;
+        public int layer = -1;
+        public string[] hasComponents;
+        public string hierarchyPathPrefix;
+        public int limit = 200;
+        public int offset = 0;
+    }
+
+    [Serializable]
+    internal class PrefabFindGameObjectsResult
+    {
+        public int total;
+        public PrefabFindGameObjectItem[] items;
+    }
+
+    [Serializable]
+    internal class PrefabFindGameObjectItem
+    {
+        public string hierarchyPath;
+        public string name;
+        public bool activeSelf;
+        public string tag;
+        public int layer;
+        public string[] componentTypes;
+    }
+
+    [Serializable]
+    internal class PrefabGetGameObjectArgs
+    {
+        public AssetRef prefab;
+        public string hierarchyPath;
+        public bool includeChildren = true;
+        public int childLimit = 100;
+    }
+
+    [Serializable]
+    internal class PrefabLocalTransformSnapshot
+    {
+        public Vec3Value localPosition;
+        public Vec3Value localRotationEuler;
+        public Vec3Value localScale;
+    }
+
+    [Serializable]
+    internal class PrefabGameObjectRelationItem
+    {
+        public string hierarchyPath;
+        public string name;
+        public bool activeSelf;
+    }
+
+    [Serializable]
+    internal class PrefabComponentSummaryItem
+    {
+        public string componentType;
+        public bool enabled;
+        public bool hasEnabled;
+        public int index;
+    }
+
+    [Serializable]
+    internal class PrefabGameObjectGetResult
+    {
+        public string prefabPath;
+        public string hierarchyPath;
+        public string name;
+        public bool activeSelf;
+        public string tag;
+        public int layer;
+        public bool isStatic;
+        public PrefabGameObjectRelationItem parent;
+        public PrefabGameObjectRelationItem[] children;
+        public bool childrenTruncated;
+        public PrefabComponentSummaryItem[] components;
+        public PrefabLocalTransformSnapshot transform;
+    }
+
+    [Serializable]
+    internal class PrefabGetComponentFieldsArgs
+    {
+        public AssetRef prefab;
+        public string hierarchyPath;
+        public int componentIndex = -1;
+        public bool includePrivateSerialized;
+    }
+
+    [Serializable]
+    internal class PrefabGetComponentFieldsResult
+    {
+        public string prefabPath;
+        public string hierarchyPath;
+        public int componentIndex;
+        public string componentType;
+        public ComponentFieldItem[] fields;
+    }
+
+    [Serializable]
+    internal class PrefabGetAssetArgs
+    {
+        public AssetRef prefab;
+    }
+
+    [Serializable]
+    internal class PrefabGetInstanceArgs
+    {
         public GameObjectRef instance;
     }
 

@@ -201,6 +201,61 @@
   },
   "tools": [
     {
+      "name": "unity_gameobject_find",
+      "description": "Find scene objects by conditions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "namePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "hasComponents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "hierarchyPathPrefix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inSelection": {
+            "type": "boolean",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "unity_gameobject_get",
       "description": "Get a GameObject snapshot including transform, hierarchy, and component summary.",
       "inputSchema": {
@@ -222,6 +277,76 @@
         },
         "required": [
           "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_gameobject_list_components",
+      "description": "List components attached to a GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_gameobject_get_component_fields",
+      "description": "Read serialized fields from a component on a scene GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "includePrivateSerialized": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_gameobject_get_component_fields_batch",
+      "description": "Read serialized fields from multiple scene components by component id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "includePrivateSerialized": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "componentIds"
         ],
         "additionalProperties": false
       }

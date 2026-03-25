@@ -202,30 +202,34 @@
   "tools": [
     {
       "name": "unity_prefab_get",
-      "description": "Inspect a prefab asset or prefab instance summary.",
+      "description": "Inspect a prefab asset summary.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "prefab": {
             "$ref": "#/$defs/assetRef"
-          },
+          }
+        },
+        "required": [
+          "prefab"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_prefab_get_instance",
+      "description": "Inspect a prefab instance summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
           "instance": {
             "$ref": "#/$defs/gameObjectRef"
           }
         },
-        "additionalProperties": false,
-        "oneOf": [
-          {
-            "required": [
-              "prefab"
-            ]
-          },
-          {
-            "required": [
-              "instance"
-            ]
-          }
-        ]
+        "required": [
+          "instance"
+        ],
+        "additionalProperties": false
       }
     },
     {
@@ -240,6 +244,118 @@
         },
         "required": [
           "instance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_prefab_find_gameobjects",
+      "description": "Search GameObjects inside a prefab asset by hierarchy, type, or metadata filters.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prefab": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "namePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "hasComponents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "hierarchyPathPrefix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "required": [
+          "prefab"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_prefab_get_gameobject",
+      "description": "Get a prefab asset GameObject snapshot including hierarchy, local transform, and component summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prefab": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "hierarchyPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "includeChildren": {
+            "type": "boolean",
+            "default": true
+          },
+          "childLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100
+          }
+        },
+        "required": [
+          "prefab",
+          "hierarchyPath"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_prefab_get_component_fields",
+      "description": "Read serialized fields from a component inside a prefab asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prefab": {
+            "$ref": "#/$defs/assetRef"
+          },
+          "hierarchyPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "includePrivateSerialized": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "prefab",
+          "hierarchyPath",
+          "componentIndex"
         ],
         "additionalProperties": false
       }

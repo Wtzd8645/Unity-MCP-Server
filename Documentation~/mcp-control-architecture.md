@@ -44,13 +44,12 @@ Current runtime tool names are the canonical names listed in the schema files an
 
 ## Implementation map
 
-- `Editor/Control/`: dispatcher, contracts, support, server, host, settings, log store, and UI/control entrypoints
+- `Editor/Control/`: dispatcher, contracts, shared read/write support, server, host, settings, log store, and UI/control entrypoints
 - `Editor/Modules/Project/`: `project_read`, `project_execute`, `project_write`
 - `Editor/Modules/Editor/`: `editor_read`, `editor_execute`, `editor_write`
 - `Editor/Modules/Runtime/`: `runtime_read`, `runtime_execute`
 - `Editor/Modules/Scene/`: `scene_read`, `scene_execute`, `scene_write`
-- `Editor/Modules/GameObject/`: `gameobject_read`, `gameobject_write`
-- `Editor/Modules/Component/`: `component_read`, `component_write`
+- `Editor/Modules/GameObject/`: `gameobject_read`, `gameobject_write`, and scene live component handlers
 - `Editor/Modules/Prefab/`: `prefab_read`, `prefab_write`
 - `Editor/Modules/Asset/`: `asset_read`, `asset_write`
 
@@ -59,4 +58,4 @@ Current runtime tool names are the canonical names listed in the schema files an
 - `Documentation~/mcp-editor-control-window.md`: Unity window usage and troubleshooting
 - `Documentation~/mcp-tool-catalog.md`: module catalog and default enablement
 - `Documentation~/mcp-tool-schemas-runtime.md`: project, editor, runtime, and scene runtime-facing details
-- `Documentation~/mcp-tool-schemas-authoring.md`: scene write, gameobject, component, prefab, and asset details
+- `Documentation~/mcp-tool-schemas-authoring.md`: scene write, gameobject, prefab, and asset details

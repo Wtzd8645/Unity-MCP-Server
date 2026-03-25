@@ -1,27 +1,20 @@
-# Unity MCP Server (Package Root)
+# Unity MCP Server
 
 This repository is the Unity package root and contains two components:
 
 - `Editor/`: Unity Editor control package source (HTTP/Named Pipe tool endpoint)
 - `Gateway~/`: MCP gateway source process (.NET, streamable HTTP)
 
-## Clone
+## Unity Editor Side
 
-```bash
-git clone <this-repo-url>
-```
+Use the Control package and open:
 
-## Repository Layout
+- `Tools/Unity MCP Control`
 
-- `Editor/`: Control component source
-- `Gateway~/`: Gateway component source
-- `Documentation~/`: package documentation
+Current Unity editor tooling manages both:
 
-## Run Gateway
-
-```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Gateway~/UnityMcpGateway.csproj
-```
+- Control endpoint lifecycle (start/stop and settings)
+- Gateway process lifecycle (start/stop/restart and process monitoring)
 
 By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
 
@@ -37,17 +30,6 @@ Common environment variables:
 - `UNITY_MCP_CONTROL_TIMEOUT_MS`
 - `UNITY_MCP_ALLOWED_PATH_PREFIXES`
 - `UNITY_MCP_ALLOWED_COMPONENT_TYPES`
-
-## Unity Editor Side
-
-Use the Control package and open:
-
-- `Tools/Unity MCP Control`
-
-Current Unity editor tooling manages both:
-
-- Control endpoint lifecycle (start/stop and settings)
-- Gateway process lifecycle (start/stop/restart and process monitoring)
 
 ## Additional Docs
 
@@ -65,9 +47,10 @@ Current module taxonomy is target-first and operation-second, for example:
 - `runtime_read`, `runtime_execute`
 - `scene_read`, `scene_execute`, `scene_write`
 - `gameobject_read`, `gameobject_write`
-- `component_read`, `component_write`
 - `prefab_read`, `prefab_write`, `asset_read`, `asset_write`
 
 Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/Control/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
 The current runtime foundation also includes editor selection tools, project build settings and player/project settings read surfaces, and a thin `project_execute` build pipeline for switching active build target and building players.
+The current `gameobject_*` foundation includes scene live object operations plus scene component inspection and mutation surfaces.
+The current `prefab_read` and `prefab_write` foundations keep a single external family while separating prefab asset content operations from prefab instance summary and override flows.
 The current `asset_write` foundation includes import/reimport, text creation, native asset creation, and copy/move style authoring surfaces under the same module.

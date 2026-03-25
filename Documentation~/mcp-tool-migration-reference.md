@@ -51,14 +51,15 @@ Current runtime tool names are the canonical names listed in `Gateway~/schemas/*
 - `unity_gameobject_set_tag` -> `unity_gameobject_set_tag`
 - `unity_gameobject_set_layer` -> `unity_gameobject_set_layer`
 - `unity_gameobject_set_static` -> `unity_gameobject_set_static`
-- `unity_component_list` -> `unity_component_list`
-- `unity_component_get_fields` -> `unity_component_get_fields`
-- `unity_component_get_fields_batch` -> `unity_component_get_fields_batch`
-- `unity_component_add` -> `unity_component_add`
-- `unity_component_remove` -> `unity_component_remove`
-- `unity_component_set_fields` -> `unity_component_set_fields`
+- `unity_component_list` -> `unity_gameobject_list_components`
+- `unity_component_get_fields` -> `unity_gameobject_get_component_fields`
+- `unity_component_get_fields_batch` -> `unity_gameobject_get_component_fields_batch`
+- `unity_component_add` -> `unity_gameobject_add_component`
+- `unity_component_remove` -> `unity_gameobject_remove_component`
+- `unity_component_set_fields` -> `unity_gameobject_set_component_fields`
 - `unity_prefab_create` -> `unity_prefab_create`
 - `unity_prefab_get` -> `unity_prefab_get`
+- `unity_prefab_get` (instance target) -> `unity_prefab_get_instance`
 - `unity_prefab_get_overrides` -> `unity_prefab_get_overrides`
 - `unity_prefab_instantiate` -> `unity_prefab_create_instance`
 - `unity_prefab_apply_overrides` -> `unity_prefab_apply_overrides`
