@@ -6,7 +6,7 @@ This document is the current module and tool catalog for the runtime contract ex
 
 - Module manifest: `Gateway~/schemas/mcp-tool-modules.json`
 - Active tool schemas: `Gateway~/schemas/mcp-tools-*.input-schemas.json`
-- Runtime routing: `Editor/ControlToolDispatcher.cs`
+- Runtime routing: `Editor/Control/ControlToolDispatcher.cs`
 
 Current runtime tool names are the canonical names listed in the schema files and the dispatcher. Legacy names are historical only and are no longer active runtime names.
 

@@ -38,22 +38,21 @@ Primary runtime settings come from:
 
 - Active module membership: `Gateway~/schemas/mcp-tool-modules.json`
 - Active tool schemas: `Gateway~/schemas/mcp-tools-*.input-schemas.json`
-- Active tool routing: `Editor/ControlToolDispatcher.cs`
+- Active tool routing: `Editor/Control/ControlToolDispatcher.cs`
 
 Current runtime tool names are the canonical names listed in the schema files and routed by the dispatcher. Legacy names are no longer active runtime names.
 
 ## Implementation map
 
-- `UnityMcpControlServer.cs`: control transport and request lifecycle
-- `ControlToolDispatcher.cs`: tool routing by active runtime name
-- `CoreToolHandlers.cs`: `project_read`, `project_write`, build-oriented `project_execute`, and `runtime_*`
-- `DiagnosticsToolHandlers.cs`: `editor_read`, `editor_execute`, `editor_write`, and test-oriented `project_execute`
-- `SceneReadToolHandlers.cs`: `scene_read`, `scene_execute`, `gameobject_read`, `component_read`
-- `SceneWriteToolHandlers.cs`: `scene_write`, `gameobject_write`, `component_write`
-- `PrefabReadToolHandlers.cs`: `prefab_read`
-- `AssetReadToolHandlers.cs`: `asset_read`
-- `AssetWriteToolHandlers.cs`: `asset_write`
-- `PrefabWriteToolHandlers.cs`: `prefab_write`
+- `Editor/Control/`: dispatcher, contracts, support, server, host, settings, log store, and UI/control entrypoints
+- `Editor/Modules/Project/`: `project_read`, `project_execute`, `project_write`
+- `Editor/Modules/Editor/`: `editor_read`, `editor_execute`, `editor_write`
+- `Editor/Modules/Runtime/`: `runtime_read`, `runtime_execute`
+- `Editor/Modules/Scene/`: `scene_read`, `scene_execute`, `scene_write`
+- `Editor/Modules/GameObject/`: `gameobject_read`, `gameobject_write`
+- `Editor/Modules/Component/`: `component_read`, `component_write`
+- `Editor/Modules/Prefab/`: `prefab_read`, `prefab_write`
+- `Editor/Modules/Asset/`: `asset_read`, `asset_write`
 
 ## Related docs
 

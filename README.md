@@ -68,6 +68,6 @@ Current module taxonomy is target-first and operation-second, for example:
 - `component_read`, `component_write`
 - `prefab_read`, `prefab_write`, `asset_read`, `asset_write`
 
-Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
+Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/Control/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
 The current runtime foundation also includes editor selection tools, project build settings and player/project settings read surfaces, and a thin `project_execute` build pipeline for switching active build target and building players.
 The current `asset_write` foundation includes import/reimport, text creation, native asset creation, and copy/move style authoring surfaces under the same module.

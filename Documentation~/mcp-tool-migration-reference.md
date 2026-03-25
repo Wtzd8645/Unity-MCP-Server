@@ -2,7 +2,7 @@
 
 This document is a historical rename reference for the breaking cutover to canonical tool names.
 
-Current runtime tool names are the canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/ControlToolDispatcher.cs`. The legacy names below are historical only and are no longer accepted runtime names.
+Current runtime tool names are the canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/Control/ControlToolDispatcher.cs`. The legacy names below are historical only and are no longer accepted runtime names.
 
 ## Canonical naming direction
 

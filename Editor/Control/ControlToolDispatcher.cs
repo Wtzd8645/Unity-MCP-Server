@@ -1,0 +1,87 @@
+using Blanketmen.UnityMcp.Editor.Modules;
+
+namespace Blanketmen.UnityMcp.Editor.Control
+{
+    internal static class ControlToolDispatcher
+    {
+        public static ControlToolCallResponse Dispatch(
+            ControlToolCallRequest request,
+            UnityControlLogStore logStore,
+            string controlVersion,
+            MainThreadActionInvoker mainThreadInvoker)
+        {
+            return request.name switch
+            {
+                "unity_project_ping" => ProjectReadToolHandlers.HandlePing(controlVersion),
+                "unity_project_get_info" => ProjectReadToolHandlers.HandleProjectInfo(request),
+                "unity_project_get_build_settings" => ProjectReadToolHandlers.HandleProjectGetBuildSettings(request),
+                "unity_project_list_build_scenes" => ProjectReadToolHandlers.HandleProjectListBuildScenes(request),
+                "unity_project_get_player_settings" => ProjectReadToolHandlers.HandleProjectGetPlayerSettings(request),
+                "unity_project_get_project_settings" => ProjectReadToolHandlers.HandleProjectGetProjectSettings(request),
+                "unity_project_set_build_scenes" => ProjectWriteToolHandlers.HandleProjectSetBuildScenes(request),
+                "unity_project_switch_build_target" => ProjectExecuteToolHandlers.HandleProjectSwitchBuildTarget(request, mainThreadInvoker),
+                "unity_project_build_player" => ProjectExecuteToolHandlers.HandleProjectBuildPlayer(request, mainThreadInvoker),
+                "unity_runtime_get_playmode_status" => RuntimeReadToolHandlers.HandlePlaymodeStatus(),
+                "unity_runtime_start_playmode" => RuntimeExecuteToolHandlers.HandlePlaymodeStart(request, mainThreadInvoker),
+                "unity_runtime_stop_playmode" => RuntimeExecuteToolHandlers.HandlePlaymodeStop(request, mainThreadInvoker),
+                "unity_scene_list" => SceneReadToolHandlers.HandleListScenes(request),
+                "unity_scene_open" => SceneExecuteToolHandlers.HandleOpenScene(request),
+                "unity_scene_list_loaded" => SceneReadToolHandlers.HandleSceneListLoaded(request),
+                "unity_scene_get_active" => SceneReadToolHandlers.HandleSceneGetActive(request),
+                "unity_scene_set_active" => SceneExecuteToolHandlers.HandleSceneSetActive(request),
+                "unity_scene_close" => SceneExecuteToolHandlers.HandleSceneClose(request),
+                "unity_gameobject_find" => GameObjectReadToolHandlers.HandleGoFind(request),
+                "unity_gameobject_get" => GameObjectReadToolHandlers.HandleGameObjectGet(request),
+                "unity_component_get_fields" => ComponentReadToolHandlers.HandleComponentGetFields(request),
+                "unity_component_list" => ComponentReadToolHandlers.HandleComponentList(request),
+                "unity_component_get_fields_batch" => ComponentReadToolHandlers.HandleComponentGetFieldsBatch(request),
+                "unity_gameobject_create" => GameObjectWriteToolHandlers.HandleGoCreate(request),
+                "unity_gameobject_delete" => GameObjectWriteToolHandlers.HandleGoDelete(request),
+                "unity_gameobject_duplicate" => GameObjectWriteToolHandlers.HandleGoDuplicate(request),
+                "unity_gameobject_reparent" => GameObjectWriteToolHandlers.HandleGoReparent(request),
+                "unity_gameobject_rename" => GameObjectWriteToolHandlers.HandleGoRename(request),
+                "unity_gameobject_set_active" => GameObjectWriteToolHandlers.HandleGoSetActive(request),
+                "unity_gameobject_set_transform" => GameObjectWriteToolHandlers.HandleGameObjectSetTransform(request),
+                "unity_gameobject_set_tag" => GameObjectWriteToolHandlers.HandleGameObjectSetTag(request),
+                "unity_gameobject_set_layer" => GameObjectWriteToolHandlers.HandleGameObjectSetLayer(request),
+                "unity_gameobject_set_static" => GameObjectWriteToolHandlers.HandleGameObjectSetStatic(request),
+                "unity_scene_create" => SceneWriteToolHandlers.HandleSceneCreate(request),
+                "unity_scene_save" => SceneWriteToolHandlers.HandleSceneSave(request),
+                "unity_scene_save_all" => SceneWriteToolHandlers.HandleSceneSaveAll(request),
+                "unity_component_add" => ComponentWriteToolHandlers.HandleComponentAdd(request),
+                "unity_component_remove" => ComponentWriteToolHandlers.HandleComponentRemove(request),
+                "unity_component_set_fields" => ComponentWriteToolHandlers.HandleComponentSetFields(request),
+                "unity_editor_get_console_logs" => EditorReadToolHandlers.HandleGetConsoleLogs(request, logStore),
+                "unity_editor_get_selection" => EditorReadToolHandlers.HandleGetSelection(request),
+                "unity_editor_set_selection" => EditorExecuteToolHandlers.HandleSetSelection(request),
+                "unity_editor_frame_selection" => EditorExecuteToolHandlers.HandleFrameSelection(request),
+                "unity_editor_clear_console" => EditorWriteToolHandlers.HandleClearConsole(logStore),
+                "unity_project_run_tests" => ProjectExecuteToolHandlers.HandleRunTests(request, mainThreadInvoker),
+                "unity_asset_find" => AssetReadToolHandlers.HandleAssetSearch(request),
+                "unity_asset_get" => AssetReadToolHandlers.HandleAssetGet(request),
+                "unity_asset_get_references" => AssetReadToolHandlers.HandleAssetRefs(request),
+                "unity_prefab_get" => PrefabReadToolHandlers.HandlePrefabGet(request),
+                "unity_prefab_get_overrides" => PrefabReadToolHandlers.HandlePrefabGetOverrides(request),
+                "unity_prefab_create" => PrefabWriteToolHandlers.HandlePrefabCreate(request),
+                "unity_prefab_create_instance" => PrefabWriteToolHandlers.HandlePrefabInstantiate(request),
+                "unity_prefab_apply_overrides" => PrefabWriteToolHandlers.HandlePrefabApplyOverrides(request),
+                "unity_prefab_revert_overrides" => PrefabWriteToolHandlers.HandlePrefabRevertOverrides(request),
+                "unity_prefab_unpack" => PrefabWriteToolHandlers.HandlePrefabUnpack(request),
+                "unity_prefab_create_variant" => PrefabWriteToolHandlers.HandlePrefabCreateVariant(request),
+                "unity_asset_copy" => AssetWriteToolHandlers.HandleAssetCopy(request),
+                "unity_asset_create_folder" => AssetWriteToolHandlers.HandleAssetCreateFolder(request),
+                "unity_asset_create_text" => AssetWriteToolHandlers.HandleAssetCreateText(request),
+                "unity_asset_create_material" => AssetWriteToolHandlers.HandleAssetCreateMaterial(request),
+                "unity_asset_create_scriptable_object" => AssetWriteToolHandlers.HandleAssetCreateScriptableObject(request),
+                "unity_asset_move" => AssetWriteToolHandlers.HandleAssetMove(request),
+                "unity_asset_rename" => AssetWriteToolHandlers.HandleAssetRename(request),
+                "unity_asset_delete_to_trash" => AssetWriteToolHandlers.HandleAssetDeleteToTrash(request),
+                "unity_asset_reimport" => AssetWriteToolHandlers.HandleAssetReimport(request),
+                "unity_asset_import" => AssetWriteToolHandlers.HandleAssetImport(request),
+                "unity_asset_set_labels" => AssetWriteToolHandlers.HandleAssetSetLabels(request),
+                _ => ControlResponses.NotImplemented(request.name),
+            };
+        }
+    }
+}
+
