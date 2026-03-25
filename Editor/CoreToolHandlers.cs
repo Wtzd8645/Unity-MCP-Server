@@ -25,7 +25,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 },
             };
 
-            return ControlResponses.Success("unity_ping handled by Unity control.", payload);
+            return ControlResponses.Success("unity_project_ping handled by Unity control.", payload);
         }
 
         public static ControlToolCallResponse HandleProjectInfo(ControlToolCallRequest request)
@@ -56,7 +56,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 payload.supportedBuildTargets = Enum.GetNames(typeof(BuildTarget));
             }
 
-            return ControlResponses.Success("unity_project_info completed.", payload);
+            return ControlResponses.Success("unity_project_get_info completed.", payload);
         }
 
         public static ControlToolCallResponse HandlePlaymodeStatus()
@@ -68,7 +68,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 isChangingPlaymode = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying,
             };
 
-            return ControlResponses.Success("unity_playmode_status completed.", payload);
+            return ControlResponses.Success("unity_runtime_get_playmode_status completed.", payload);
         }
 
         public static ControlToolCallResponse HandlePlaymodeStart(
@@ -157,7 +157,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 timeoutMs = timeoutMs,
             };
 
-            return ControlResponses.Success("unity_playmode_start completed.", payload);
+            return ControlResponses.Success("unity_runtime_start_playmode completed.", payload);
         }
 
         public static ControlToolCallResponse HandlePlaymodeStop(
@@ -246,7 +246,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 timeoutMs = timeoutMs,
             };
 
-            return ControlResponses.Success("unity_playmode_stop completed.", payload);
+            return ControlResponses.Success("unity_runtime_stop_playmode completed.", payload);
         }
 
         private static bool TryQueryPlaymodeState(

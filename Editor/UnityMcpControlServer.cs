@@ -566,9 +566,9 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
         private static ControlToolCallResponse ExecuteOnMainThreadWithTimeout(ControlToolCallRequest request, int timeoutMs)
         {
-            if (string.Equals(request.name, "unity_run_tests", StringComparison.Ordinal) ||
-                string.Equals(request.name, "unity_playmode_start", StringComparison.Ordinal) ||
-                string.Equals(request.name, "unity_playmode_stop", StringComparison.Ordinal))
+            if (string.Equals(request.name, "unity_project_run_tests", StringComparison.Ordinal) ||
+                string.Equals(request.name, "unity_runtime_start_playmode", StringComparison.Ordinal) ||
+                string.Equals(request.name, "unity_runtime_stop_playmode", StringComparison.Ordinal))
             {
                 try
                 {

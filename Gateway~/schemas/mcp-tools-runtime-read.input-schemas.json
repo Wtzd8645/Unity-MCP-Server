@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Diagnostics Tool Input Schemas",
+  "title": "Unity MCP Runtime Read Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,119 +201,13 @@
   },
   "tools": [
     {
-      "name": "unity_get_console_logs",
-      "description": "Read Unity Console messages with incremental polling.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "levels": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "log",
-                "warning",
-                "error",
-                "exception",
-                "assert"
-              ]
-            },
-            "uniqueItems": true
-          },
-          "sinceId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 2000,
-            "default": 200
-          },
-          "order": {
-            "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "default": "desc"
-          },
-          "includeStackTrace": {
-            "type": "boolean",
-            "default": true
-          }
-        },
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_clear_console",
-      "description": "Clear Unity Console.",
+      "name": "unity_runtime_get_playmode_status",
+      "description": "Query play mode runtime state.",
       "inputSchema": {
         "type": "object",
         "properties": {},
         "additionalProperties": false
       }
-    },
-    {
-      "name": "unity_run_tests",
-      "description": "Run Unity Test Framework tests (defaults to EditMode).",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "mode": {
-            "type": "string",
-            "enum": [
-              "EditMode",
-              "PlayMode"
-            ],
-            "default": "EditMode"
-          },
-          "filter": {
-            "type": "object",
-            "properties": {
-              "assemblyNames": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              },
-              "testNames": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              },
-              "categoryNames": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              }
-            },
-            "additionalProperties": false
-          },
-          "timeoutMs": {
-            "type": "integer",
-            "minimum": 5000,
-            "maximum": 3600000,
-            "default": 600000
-          },
-          "includePassed": {
-            "type": "boolean",
-            "default": false
-          },
-          "includeXmlReportPath": {
-            "type": "boolean",
-            "default": true
-          }
-        },
-        "additionalProperties": false
-      }
     }
   ]
 }
-

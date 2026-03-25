@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Scene Write Tool Input Schemas",
+  "title": "Unity MCP Editor Read Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,112 +201,49 @@
   },
   "tools": [
     {
-      "name": "unity_scene_create",
-      "description": "Create and save a new scene asset.",
+      "name": "unity_editor_get_console_logs",
+      "description": "Read Unity Console messages with incremental polling.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "log",
+                "warning",
+                "error",
+                "exception",
+                "assert"
+              ]
+            },
+            "uniqueItems": true
           },
-          "setup": {
+          "sinceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000,
+            "default": 200
+          },
+          "order": {
             "type": "string",
             "enum": [
-              "EmptyScene",
-              "DefaultGameObjects"
+              "asc",
+              "desc"
             ],
-            "default": "EmptyScene"
+            "default": "desc"
           },
-          "openMode": {
-            "type": "string",
-            "enum": [
-              "Single",
-              "Additive"
-            ],
-            "default": "Additive"
-          },
-          "setActive": {
+          "includeStackTrace": {
             "type": "boolean",
             "default": true
-          },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
-          },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
           }
         },
-        "required": [
-          "outputPath"
-        ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_scene_save",
-      "description": "Save a loaded scene, optionally to a new output path.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_scene_save_all",
-      "description": "Save all loaded scenes that have paths.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
+        "additionalProperties": false
       }
     }
   ]

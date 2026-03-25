@@ -4,25 +4,53 @@
   "version": "0.1.0",
   "modules": [
     {
-      "name": "core",
+      "name": "project_read",
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_ping",
-        "unity_project_info",
-        "unity_playmode_status",
-        "unity_playmode_start",
-        "unity_playmode_stop"
+        "unity_project_ping",
+        "unity_project_get_info"
       ]
     },
     {
-      "name": "diagnostics",
+      "name": "project_execute",
       "risk": "low-medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_project_run_tests"
+      ]
+    },
+    {
+      "name": "editor_read",
+      "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_get_console_logs",
-        "unity_clear_console",
-        "unity_run_tests"
+        "unity_editor_get_console_logs"
+      ]
+    },
+    {
+      "name": "editor_write",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_editor_clear_console"
+      ]
+    },
+    {
+      "name": "runtime_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity_runtime_get_playmode_status"
+      ]
+    },
+    {
+      "name": "runtime_execute",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_runtime_start_playmode",
+        "unity_runtime_stop_playmode"
       ]
     },
     {
@@ -30,10 +58,20 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_list_scenes",
-        "unity_open_scene",
-        "unity_go_find",
-        "unity_component_get_fields"
+        "unity_scene_list",
+        "unity_scene_list_loaded",
+        "unity_scene_get_active",
+        "unity_gameobject_find"
+      ]
+    },
+    {
+      "name": "scene_execute",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_scene_open",
+        "unity_scene_set_active",
+        "unity_scene_close"
       ]
     },
     {
@@ -41,15 +79,63 @@
       "risk": "medium",
       "enabledByDefault": false,
       "tools": [
-        "unity_go_create",
-        "unity_go_delete",
-        "unity_go_duplicate",
-        "unity_go_reparent",
-        "unity_go_rename",
-        "unity_go_set_active",
+        "unity_scene_create",
+        "unity_scene_save",
+        "unity_scene_save_all"
+      ]
+    },
+    {
+      "name": "gameobject_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity_gameobject_get"
+      ]
+    },
+    {
+      "name": "component_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity_component_list",
+        "unity_component_get_fields",
+        "unity_component_get_fields_batch"
+      ]
+    },
+    {
+      "name": "gameobject_write",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
+        "unity_gameobject_create",
+        "unity_gameobject_delete",
+        "unity_gameobject_duplicate",
+        "unity_gameobject_reparent",
+        "unity_gameobject_rename",
+        "unity_gameobject_set_active",
+        "unity_gameobject_set_transform",
+        "unity_gameobject_set_tag",
+        "unity_gameobject_set_layer",
+        "unity_gameobject_set_static"
+      ]
+    },
+    {
+      "name": "component_write",
+      "risk": "medium",
+      "enabledByDefault": false,
+      "tools": [
         "unity_component_add",
         "unity_component_remove",
         "unity_component_set_fields"
+      ]
+    },
+    {
+      "name": "prefab_read",
+      "risk": "low",
+      "enabledByDefault": true,
+      "tools": [
+        "unity_prefab_get",
+        "unity_prefab_get_overrides"
       ]
     },
     {
@@ -58,7 +144,7 @@
       "enabledByDefault": false,
       "tools": [
         "unity_prefab_create",
-        "unity_prefab_instantiate",
+        "unity_prefab_create_instance",
         "unity_prefab_apply_overrides",
         "unity_prefab_revert_overrides",
         "unity_prefab_unpack",
@@ -70,9 +156,9 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_asset_search",
+        "unity_asset_find",
         "unity_asset_get",
-        "unity_asset_refs"
+        "unity_asset_get_references"
       ]
     },
     {
@@ -84,9 +170,14 @@
         "unity_asset_rename",
         "unity_asset_delete_to_trash",
         "unity_asset_reimport",
-        "unity_asset_set_labels"
+        "unity_asset_import",
+        "unity_asset_set_labels",
+        "unity_asset_copy",
+        "unity_asset_create_folder",
+        "unity_asset_create_text",
+        "unity_asset_create_material",
+        "unity_asset_create_scriptable_object"
       ]
     }
   ]
 }
-

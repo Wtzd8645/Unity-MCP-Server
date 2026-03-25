@@ -100,7 +100,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 items = page.ToArray(),
             };
 
-            return ControlResponses.Success("unity_list_scenes completed.", payload);
+            return ControlResponses.Success("unity_scene_list completed.", payload);
         }
 
         public static ControlToolCallResponse HandleOpenScene(ControlToolCallRequest request)
@@ -144,7 +144,117 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 loadedScenes = GetLoadedScenePaths(),
             };
 
-            return ControlResponses.Success("unity_open_scene completed.", payload);
+            return ControlResponses.Success("unity_scene_open completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleSceneListLoaded(ControlToolCallRequest request)
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            var payload = new SceneListLoadedResult
+            {
+                activeScenePath = activeScene.IsValid() ? activeScene.path : null,
+                items = GetLoadedSceneItems(),
+            };
+
+            return ControlResponses.Success("unity_scene_list_loaded completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleSceneGetActive(ControlToolCallRequest request)
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid())
+            {
+                return ControlResponses.Error("Active scene is not available.", "not_found", request.name);
+            }
+
+            var payload = new SceneGetActiveResult
+            {
+                activeScenePath = activeScene.path,
+                scene = BuildSceneInfo(activeScene, true),
+            };
+
+            return ControlResponses.Success("unity_scene_get_active completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleSceneSetActive(ControlToolCallRequest request)
+        {
+            SceneSetActiveArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new SceneSetActiveArgs());
+
+            if (string.IsNullOrEmpty(args.scenePath))
+            {
+                return ControlResponses.Error("scenePath is required.", "invalid_argument", request.name);
+            }
+
+            Scene scene = SceneManager.GetSceneByPath(args.scenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return ControlResponses.Error("Scene is not loaded: " + args.scenePath, "not_found", request.name);
+            }
+
+            if (!SceneManager.SetActiveScene(scene))
+            {
+                return ControlResponses.Error("Failed to set active scene: " + args.scenePath, "tool_exception", request.name);
+            }
+
+            var payload = new SceneSetActiveResult
+            {
+                activeScenePath = SceneManager.GetActiveScene().path,
+                loadedScenes = GetLoadedScenePaths(),
+            };
+
+            return ControlResponses.Success("unity_scene_set_active completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleSceneClose(ControlToolCallRequest request)
+        {
+            SceneCloseArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new SceneCloseArgs
+                {
+                    removeScene = true,
+                    saveModifiedScene = false,
+                });
+
+            if (string.IsNullOrEmpty(args.scenePath))
+            {
+                return ControlResponses.Error("scenePath is required.", "invalid_argument", request.name);
+            }
+
+            Scene scene = SceneManager.GetSceneByPath(args.scenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return ControlResponses.Error("Scene is not loaded: " + args.scenePath, "not_found", request.name);
+            }
+
+            if (args.saveModifiedScene && scene.isDirty)
+            {
+                if (string.IsNullOrEmpty(scene.path))
+                {
+                    return ControlResponses.Error("Cannot save a loaded untitled scene before close.", "invalid_argument", request.name);
+                }
+
+                if (!EditorSceneManager.SaveScene(scene))
+                {
+                    return ControlResponses.Error("Failed to save scene before close: " + scene.path, "tool_exception", request.name);
+                }
+            }
+
+            if (!EditorSceneManager.CloseScene(scene, args.removeScene))
+            {
+                return ControlResponses.Error("Failed to close scene: " + args.scenePath, "tool_exception", request.name);
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            var payload = new SceneCloseResult
+            {
+                closedScenePath = args.scenePath,
+                activeScenePath = activeScene.IsValid() ? activeScene.path : null,
+                loadedScenes = GetLoadedScenePaths(),
+            };
+
+            return ControlResponses.Success("unity_scene_close completed.", payload);
         }
 
         public static ControlToolCallResponse HandleGoFind(ControlToolCallRequest request)
@@ -170,7 +280,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                return ControlResponses.Error("Scene is not loaded. Use unity_open_scene first.", "not_found", request.name);
+                return ControlResponses.Error("Scene is not loaded. Use unity_scene_open first.", "not_found", request.name);
             }
 
             bool filterIsActive = ControlJson.RawJsonContainsProperty(request.argumentsJson, "isActive");
@@ -195,7 +305,32 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 items = page.ToArray(),
             };
 
-            return ControlResponses.Success("unity_go_find completed.", payload);
+            return ControlResponses.Success("unity_gameobject_find completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleGameObjectGet(ControlToolCallRequest request)
+        {
+            GameObjectGetArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new GameObjectGetArgs
+                {
+                    includeChildren = true,
+                    childLimit = 100,
+                });
+
+            if (args.target == null)
+            {
+                return ControlResponses.Error("target is required.", "invalid_argument", request.name);
+            }
+
+            if (!ControlWriteSupport.TryResolveGameObject(args.target, out GameObject gameObject, out string resolveError))
+            {
+                return ControlResponses.Error(resolveError, "not_found", request.name);
+            }
+
+            int childLimit = ControlUtil.Clamp(args.childLimit, 1, 500, 100);
+            GameObjectGetResult payload = BuildGameObjectGetResult(gameObject, args.includeChildren, childLimit);
+            return ControlResponses.Success("unity_gameobject_get completed.", payload);
         }
 
         public static ControlToolCallResponse HandleComponentGetFields(ControlToolCallRequest request)
@@ -236,6 +371,94 @@ namespace Blanketmen.UnityMcp.Control.Editor
             };
 
             return ControlResponses.Success("unity_component_get_fields completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleComponentList(ControlToolCallRequest request)
+        {
+            ComponentListArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new ComponentListArgs());
+
+            if (args.target == null)
+            {
+                return ControlResponses.Error("target is required.", "invalid_argument", request.name);
+            }
+
+            if (!ControlWriteSupport.TryResolveGameObject(args.target, out GameObject gameObject, out string resolveError))
+            {
+                return ControlResponses.Error(resolveError, "not_found", request.name);
+            }
+
+            var payload = new ComponentListResult
+            {
+                globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(gameObject).ToString(),
+                scenePath = gameObject.scene.path,
+                hierarchyPath = BuildHierarchyPath(gameObject.transform),
+                items = BuildComponentSummaries(gameObject).ToArray(),
+            };
+
+            return ControlResponses.Success("unity_component_list completed.", payload);
+        }
+
+        public static ControlToolCallResponse HandleComponentGetFieldsBatch(ControlToolCallRequest request)
+        {
+            ComponentGetFieldsBatchArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new ComponentGetFieldsBatchArgs
+                {
+                    includePrivateSerialized = false,
+                });
+
+            if (args.componentIds == null || args.componentIds.Length == 0)
+            {
+                return ControlResponses.Error("componentIds is required.", "invalid_argument", request.name);
+            }
+
+            if (args.componentIds.Length > 100)
+            {
+                return ControlResponses.Error("componentIds exceeds max batch size 100.", "invalid_argument", request.name);
+            }
+
+            var items = new List<ComponentGetFieldsBatchItem>();
+            int succeeded = 0;
+            for (int i = 0; i < args.componentIds.Length; i++)
+            {
+                string componentId = args.componentIds[i];
+                if (!TryResolveComponentByGlobalId(componentId, out Component component, out string resolveError))
+                {
+                    items.Add(new ComponentGetFieldsBatchItem
+                    {
+                        componentId = componentId,
+                        status = "failed",
+                        message = resolveError,
+                    });
+                    continue;
+                }
+
+                GameObject target = component.gameObject;
+                items.Add(new ComponentGetFieldsBatchItem
+                {
+                    componentId = componentId,
+                    componentType = component.GetType().FullName ?? component.GetType().Name,
+                    targetGlobalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(target).ToString(),
+                    scenePath = target.scene.path,
+                    hierarchyPath = BuildHierarchyPath(target.transform),
+                    status = "succeeded",
+                    message = "Fields loaded.",
+                    fields = ExtractComponentFields(component, args.includePrivateSerialized).ToArray(),
+                });
+                succeeded++;
+            }
+
+            var payload = new ComponentGetFieldsBatchResult
+            {
+                requested = args.componentIds.Length,
+                succeeded = succeeded,
+                failed = args.componentIds.Length - succeeded,
+                items = items.ToArray(),
+            };
+
+            return ControlResponses.Success("unity_component_get_fields_batch completed.", payload);
         }
 
         private static void CollectGoMatches(
@@ -433,6 +656,33 @@ namespace Blanketmen.UnityMcp.Control.Editor
             return false;
         }
 
+        private static bool TryResolveComponentByGlobalId(string componentId, out Component component, out string error)
+        {
+            component = null;
+            error = null;
+
+            if (string.IsNullOrEmpty(componentId))
+            {
+                error = "componentId is required.";
+                return false;
+            }
+
+            if (!GlobalObjectId.TryParse(componentId, out GlobalObjectId globalId))
+            {
+                error = "Invalid componentId.";
+                return false;
+            }
+
+            component = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(globalId) as Component;
+            if (component == null)
+            {
+                error = "Component not found by componentId.";
+                return false;
+            }
+
+            return true;
+        }
+
         private static List<ComponentFieldItem> ExtractComponentFields(Component component, bool includePrivateSerialized)
         {
             var result = new List<ComponentFieldItem>();
@@ -546,6 +796,140 @@ namespace Blanketmen.UnityMcp.Control.Editor
             return false;
         }
 
+        private static GameObjectGetResult BuildGameObjectGetResult(GameObject gameObject, bool includeChildren, int childLimit)
+        {
+            Transform transform = gameObject.transform;
+            var result = new GameObjectGetResult
+            {
+                globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(gameObject).ToString(),
+                scenePath = gameObject.scene.path,
+                hierarchyPath = BuildHierarchyPath(transform),
+                name = gameObject.name,
+                activeSelf = gameObject.activeSelf,
+                activeInHierarchy = gameObject.activeInHierarchy,
+                tag = gameObject.tag,
+                layer = gameObject.layer,
+                isStatic = gameObject.isStatic,
+                parent = transform.parent == null ? null : BuildRelationItem(transform.parent.gameObject),
+                children = Array.Empty<GameObjectRelationItem>(),
+                childrenTruncated = false,
+                components = BuildComponentSummaries(gameObject).ToArray(),
+                transform = BuildTransformSnapshot(transform),
+            };
+
+            if (includeChildren)
+            {
+                int childCount = transform.childCount;
+                int takeCount = Math.Min(childCount, childLimit);
+                var children = new List<GameObjectRelationItem>(takeCount);
+                for (int i = 0; i < takeCount; i++)
+                {
+                    children.Add(BuildRelationItem(transform.GetChild(i).gameObject));
+                }
+
+                result.children = children.ToArray();
+                result.childrenTruncated = childCount > takeCount;
+            }
+
+            return result;
+        }
+
+        private static GameObjectRelationItem BuildRelationItem(GameObject gameObject)
+        {
+            return new GameObjectRelationItem
+            {
+                globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(gameObject).ToString(),
+                hierarchyPath = BuildHierarchyPath(gameObject.transform),
+                name = gameObject.name,
+                activeSelf = gameObject.activeSelf,
+            };
+        }
+
+        private static List<ComponentSummaryItem> BuildComponentSummaries(GameObject gameObject)
+        {
+            var items = new List<ComponentSummaryItem>();
+            Component[] components = gameObject.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                ComponentSummaryItem item = BuildComponentSummary(components[i], i);
+                if (item != null)
+                {
+                    items.Add(item);
+                }
+            }
+
+            return items;
+        }
+
+        private static ComponentSummaryItem BuildComponentSummary(Component component, int index)
+        {
+            if (component == null)
+            {
+                return null;
+            }
+
+            bool hasEnabled = TryGetComponentEnabled(component, out bool enabled);
+            return new ComponentSummaryItem
+            {
+                componentId = GlobalObjectId.GetGlobalObjectIdSlow(component).ToString(),
+                componentType = component.GetType().FullName ?? component.GetType().Name,
+                enabled = enabled,
+                hasEnabled = hasEnabled,
+                index = index,
+            };
+        }
+
+        private static bool TryGetComponentEnabled(Component component, out bool enabled)
+        {
+            enabled = false;
+            if (component is Behaviour behaviour)
+            {
+                enabled = behaviour.enabled;
+                return true;
+            }
+
+            PropertyInfo property = component.GetType().GetProperty(
+                "enabled",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (property == null || property.PropertyType != typeof(bool) || !property.CanRead || property.GetIndexParameters().Length != 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                enabled = (bool)property.GetValue(component, null);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static GameObjectTransformSnapshot BuildTransformSnapshot(Transform transform)
+        {
+            return new GameObjectTransformSnapshot
+            {
+                localPosition = BuildVec3Value(transform.localPosition),
+                localRotationEuler = BuildVec3Value(transform.localEulerAngles),
+                localScale = BuildVec3Value(transform.localScale),
+                worldPosition = BuildVec3Value(transform.position),
+                worldRotationEuler = BuildVec3Value(transform.eulerAngles),
+                lossyScale = BuildVec3Value(transform.lossyScale),
+            };
+        }
+
+        private static Vec3Value BuildVec3Value(Vector3 value)
+        {
+            return new Vec3Value
+            {
+                x = value.x,
+                y = value.y,
+                z = value.z,
+            };
+        }
+
         private static string BuildHierarchyPath(Transform transform)
         {
             var parts = new List<string>();
@@ -558,6 +942,36 @@ namespace Blanketmen.UnityMcp.Control.Editor
 
             parts.Reverse();
             return string.Join("/", parts);
+        }
+
+        private static SceneInfoItem[] GetLoadedSceneItems()
+        {
+            var scenes = new List<SceneInfoItem>();
+            Scene activeScene = SceneManager.GetActiveScene();
+            int count = SceneManager.sceneCount;
+            for (int i = 0; i < count; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                scenes.Add(BuildSceneInfo(scene, scene == activeScene));
+            }
+
+            return scenes.ToArray();
+        }
+
+        private static SceneInfoItem BuildSceneInfo(Scene scene, bool isActive)
+        {
+            int buildIndex = scene.buildIndex;
+            return new SceneInfoItem
+            {
+                path = scene.path,
+                name = scene.name,
+                isLoaded = scene.isLoaded,
+                isDirty = scene.isDirty,
+                isActive = isActive,
+                rootCount = scene.isLoaded ? scene.rootCount : 0,
+                buildIndex = buildIndex,
+                hasBuildIndex = buildIndex >= 0,
+            };
         }
 
         private static GameObject FindGameObjectByHierarchyPath(Scene scene, string hierarchyPath)

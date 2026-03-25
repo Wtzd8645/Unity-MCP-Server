@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity_asset_search",
+      "name": "unity_asset_find",
       "description": "Search assets by type/name/label/path.",
       "inputSchema": {
         "type": "object",
@@ -299,7 +299,7 @@
       }
     },
     {
-      "name": "unity_asset_refs",
+      "name": "unity_asset_get_references",
       "description": "Traverse references for one asset.",
       "inputSchema": {
         "type": "object",
@@ -340,4 +340,3 @@
     }
   ]
 }
-

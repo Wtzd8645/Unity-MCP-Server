@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Core Tool Input Schemas",
+  "title": "Unity MCP Gameobject Read Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,77 +201,30 @@
   },
   "tools": [
     {
-      "name": "unity_ping",
-      "description": "Verify control connectivity and editor heartbeat.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_project_info",
-      "description": "Return project/runtime/editor basics.",
+      "name": "unity_gameobject_get",
+      "description": "Get a GameObject snapshot including transform, hierarchy, and component summary.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "includePlatformMatrix": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_playmode_status",
-      "description": "Query play mode runtime state.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_playmode_start",
-      "description": "Enter play mode and optionally wait until state transition completes.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "waitForEntered": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "includeChildren": {
             "type": "boolean",
             "default": true
           },
-          "timeoutMs": {
+          "childLimit": {
             "type": "integer",
-            "minimum": 1000,
-            "maximum": 120000,
-            "default": 15000
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100
           }
         },
-        "additionalProperties": false
-      }
-    },
-    {
-      "name": "unity_playmode_stop",
-      "description": "Exit play mode and optionally wait until complete.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "waitForExited": {
-            "type": "boolean",
-            "default": true
-          },
-          "timeoutMs": {
-            "type": "integer",
-            "minimum": 1000,
-            "maximum": 120000,
-            "default": 15000
-          }
-        },
+        "required": [
+          "target"
+        ],
         "additionalProperties": false
       }
     }
   ]
 }
-

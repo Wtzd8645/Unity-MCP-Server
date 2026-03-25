@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Scene Write Tool Input Schemas",
+  "title": "Unity MCP Component Write Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,41 +201,21 @@
   },
   "tools": [
     {
-      "name": "unity_scene_create",
-      "description": "Create and save a new scene asset.",
+      "name": "unity_component_add",
+      "description": "Add a component to a GameObject.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
           },
-          "setup": {
+          "componentType": {
             "type": "string",
-            "enum": [
-              "EmptyScene",
-              "DefaultGameObjects"
-            ],
-            "default": "EmptyScene"
+            "minLength": 1
           },
-          "openMode": {
-            "type": "string",
-            "enum": [
-              "Single",
-              "Additive"
-            ],
-            "default": "Additive"
-          },
-          "setActive": {
-            "type": "boolean",
-            "default": true
-          },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
-          },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
           },
           "dryRun": {
             "type": "boolean",
@@ -247,7 +227,8 @@
           }
         },
         "required": [
-          "outputPath"
+          "target",
+          "componentType"
         ],
         "additionalProperties": false,
         "allOf": [
@@ -258,16 +239,21 @@
       }
     },
     {
-      "name": "unity_scene_save",
-      "description": "Save a loaded scene, optionally to a new output path.",
+      "name": "unity_component_remove",
+      "description": "Remove one component from a GameObject by type or component id.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
           },
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
           },
           "dryRun": {
             "type": "boolean",
@@ -278,20 +264,57 @@
             "default": false
           }
         },
+        "required": [
+          "target"
+        ],
         "additionalProperties": false,
         "allOf": [
           {
             "$ref": "#/$defs/mutateFlags"
+          },
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "componentType"
+                ]
+              },
+              {
+                "required": [
+                  "componentId"
+                ]
+              }
+            ]
           }
         ]
       }
     },
     {
-      "name": "unity_scene_save_all",
-      "description": "Save all loaded scenes that have paths.",
+      "name": "unity_component_set_fields",
+      "description": "Set serialized fields on a component.",
       "inputSchema": {
         "type": "object",
         "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "componentType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fields": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": true
+          },
+          "strict": {
+            "type": "boolean",
+            "default": true
+          },
           "dryRun": {
             "type": "boolean",
             "default": true
@@ -301,6 +324,10 @@
             "default": false
           }
         },
+        "required": [
+          "target",
+          "fields"
+        ],
         "additionalProperties": false,
         "allOf": [
           {

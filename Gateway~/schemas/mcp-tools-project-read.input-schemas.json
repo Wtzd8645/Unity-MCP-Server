@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Scene Write Tool Input Schemas",
+  "title": "Unity MCP Project Read Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,112 +201,26 @@
   },
   "tools": [
     {
-      "name": "unity_scene_create",
-      "description": "Create and save a new scene asset.",
+      "name": "unity_project_ping",
+      "description": "Verify control connectivity and editor heartbeat.",
       "inputSchema": {
         "type": "object",
-        "properties": {
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "setup": {
-            "type": "string",
-            "enum": [
-              "EmptyScene",
-              "DefaultGameObjects"
-            ],
-            "default": "EmptyScene"
-          },
-          "openMode": {
-            "type": "string",
-            "enum": [
-              "Single",
-              "Additive"
-            ],
-            "default": "Additive"
-          },
-          "setActive": {
-            "type": "boolean",
-            "default": true
-          },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
-          },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "outputPath"
-        ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
+        "properties": {},
+        "additionalProperties": false
       }
     },
     {
-      "name": "unity_scene_save",
-      "description": "Save a loaded scene, optionally to a new output path.",
+      "name": "unity_project_get_info",
+      "description": "Return project/runtime/editor basics.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
+          "includePlatformMatrix": {
             "type": "boolean",
             "default": false
           }
         },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_scene_save_all",
-      "description": "Save all loaded scenes that have paths.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
+        "additionalProperties": false
       }
     }
   ]

@@ -9,6 +9,7 @@ Thumbs.db
 .consulo/
 .gradle/
 .dotnet-cli-home/
+.build-verify/
 .utmp/
 
 # .NET build outputs

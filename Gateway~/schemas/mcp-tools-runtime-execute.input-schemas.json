@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Scene Write Tool Input Schemas",
+  "title": "Unity MCP Runtime Execute Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,112 +201,43 @@
   },
   "tools": [
     {
-      "name": "unity_scene_create",
-      "description": "Create and save a new scene asset.",
+      "name": "unity_runtime_start_playmode",
+      "description": "Enter play mode and optionally wait until state transition completes.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "setup": {
-            "type": "string",
-            "enum": [
-              "EmptyScene",
-              "DefaultGameObjects"
-            ],
-            "default": "EmptyScene"
-          },
-          "openMode": {
-            "type": "string",
-            "enum": [
-              "Single",
-              "Additive"
-            ],
-            "default": "Additive"
-          },
-          "setActive": {
+          "waitForEntered": {
             "type": "boolean",
             "default": true
           },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
-          },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000,
+            "default": 15000
           }
         },
-        "required": [
-          "outputPath"
-        ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
+        "additionalProperties": false
       }
     },
     {
-      "name": "unity_scene_save",
-      "description": "Save a loaded scene, optionally to a new output path.",
+      "name": "unity_runtime_stop_playmode",
+      "description": "Exit play mode and optionally wait until complete.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "outputPath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "dryRun": {
+          "waitForExited": {
             "type": "boolean",
             "default": true
           },
-          "apply": {
-            "type": "boolean",
-            "default": false
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000,
+            "default": 15000
           }
         },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_scene_save_all",
-      "description": "Save all loaded scenes that have paths.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
+        "additionalProperties": false
       }
     }
   ]

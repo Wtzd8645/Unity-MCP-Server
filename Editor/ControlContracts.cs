@@ -155,6 +155,72 @@ namespace Blanketmen.UnityMcp.Control.Editor
     }
 
     [Serializable]
+    internal class SceneListLoadedArgs
+    {
+    }
+
+    [Serializable]
+    internal class SceneGetActiveArgs
+    {
+    }
+
+    [Serializable]
+    internal class SceneInfoItem
+    {
+        public string path;
+        public string name;
+        public bool isLoaded;
+        public bool isDirty;
+        public bool isActive;
+        public int rootCount;
+        public int buildIndex;
+        public bool hasBuildIndex;
+    }
+
+    [Serializable]
+    internal class SceneListLoadedResult
+    {
+        public string activeScenePath;
+        public SceneInfoItem[] items;
+    }
+
+    [Serializable]
+    internal class SceneGetActiveResult
+    {
+        public string activeScenePath;
+        public SceneInfoItem scene;
+    }
+
+    [Serializable]
+    internal class SceneSetActiveArgs
+    {
+        public string scenePath;
+    }
+
+    [Serializable]
+    internal class SceneSetActiveResult
+    {
+        public string activeScenePath;
+        public string[] loadedScenes;
+    }
+
+    [Serializable]
+    internal class SceneCloseArgs
+    {
+        public string scenePath;
+        public bool removeScene = true;
+        public bool saveModifiedScene;
+    }
+
+    [Serializable]
+    internal class SceneCloseResult
+    {
+        public string closedScenePath;
+        public string activeScenePath;
+        public string[] loadedScenes;
+    }
+
+    [Serializable]
     internal class GetConsoleLogsArgs
     {
         public string[] levels;
@@ -234,6 +300,71 @@ namespace Blanketmen.UnityMcp.Control.Editor
     }
 
     [Serializable]
+    internal class GameObjectGetArgs
+    {
+        public GameObjectRef target;
+        public bool includeChildren = true;
+        public int childLimit = 100;
+    }
+
+    [Serializable]
+    internal class Vec3Value
+    {
+        public float x;
+        public float y;
+        public float z;
+    }
+
+    [Serializable]
+    internal class GameObjectTransformSnapshot
+    {
+        public Vec3Value localPosition;
+        public Vec3Value localRotationEuler;
+        public Vec3Value localScale;
+        public Vec3Value worldPosition;
+        public Vec3Value worldRotationEuler;
+        public Vec3Value lossyScale;
+    }
+
+    [Serializable]
+    internal class GameObjectRelationItem
+    {
+        public string globalObjectId;
+        public string hierarchyPath;
+        public string name;
+        public bool activeSelf;
+    }
+
+    [Serializable]
+    internal class ComponentSummaryItem
+    {
+        public string componentId;
+        public string componentType;
+        public bool enabled;
+        public bool hasEnabled;
+        public int index;
+    }
+
+    [Serializable]
+    internal class GameObjectGetResult
+    {
+        public string globalObjectId;
+        public string scenePath;
+        public string hierarchyPath;
+        public string name;
+        public bool activeSelf;
+        public bool activeInHierarchy;
+        public string tag;
+        public int layer;
+        public bool isStatic;
+        public GameObjectRelationItem parent;
+        public GameObjectRelationItem[] children;
+        public bool childrenTruncated;
+        public ComponentSummaryItem[] components;
+        public GameObjectTransformSnapshot transform;
+    }
+
+    [Serializable]
     internal class ComponentGetFieldsArgs
     {
         public GameObjectRef target;
@@ -256,6 +387,50 @@ namespace Blanketmen.UnityMcp.Control.Editor
         public string componentId;
         public string componentType;
         public ComponentFieldItem[] fields;
+    }
+
+    [Serializable]
+    internal class ComponentListArgs
+    {
+        public GameObjectRef target;
+    }
+
+    [Serializable]
+    internal class ComponentListResult
+    {
+        public string globalObjectId;
+        public string scenePath;
+        public string hierarchyPath;
+        public ComponentSummaryItem[] items;
+    }
+
+    [Serializable]
+    internal class ComponentGetFieldsBatchArgs
+    {
+        public string[] componentIds;
+        public bool includePrivateSerialized;
+    }
+
+    [Serializable]
+    internal class ComponentGetFieldsBatchItem
+    {
+        public string componentId;
+        public string componentType;
+        public string targetGlobalObjectId;
+        public string scenePath;
+        public string hierarchyPath;
+        public string status;
+        public string message;
+        public ComponentFieldItem[] fields;
+    }
+
+    [Serializable]
+    internal class ComponentGetFieldsBatchResult
+    {
+        public int requested;
+        public int succeeded;
+        public int failed;
+        public ComponentGetFieldsBatchItem[] items;
     }
 
     [Serializable]
@@ -399,6 +574,15 @@ namespace Blanketmen.UnityMcp.Control.Editor
     }
 
     [Serializable]
+    internal class GameObjectSetTransformArgs
+    {
+        public GameObjectRef target;
+        public TransformInput transform;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
     internal class GoCreateComponentInput
     {
         public string type;
@@ -464,6 +648,33 @@ namespace Blanketmen.UnityMcp.Control.Editor
     }
 
     [Serializable]
+    internal class GameObjectSetTagArgs
+    {
+        public GameObjectRef[] targets;
+        public string tag;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class GameObjectSetLayerArgs
+    {
+        public GameObjectRef[] targets;
+        public int layer;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class GameObjectSetStaticArgs
+    {
+        public GameObjectRef[] targets;
+        public bool isStatic;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
     internal class ComponentAddArgs
     {
         public GameObjectRef target;
@@ -491,6 +702,146 @@ namespace Blanketmen.UnityMcp.Control.Editor
         public bool strict = true;
         public bool dryRun = true;
         public bool apply = false;
+    }
+
+    [Serializable]
+    internal class SceneCreateArgs
+    {
+        public string outputPath;
+        public string setup = "EmptyScene";
+        public string openMode = "Additive";
+        public bool setActive = true;
+        public bool overwrite;
+        public bool saveModifiedScenes;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class SceneSaveArgs
+    {
+        public string scenePath;
+        public string outputPath;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class SceneSaveAllArgs
+    {
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class PrefabGetArgs
+    {
+        public AssetRef prefab;
+        public GameObjectRef instance;
+    }
+
+    [Serializable]
+    internal class PrefabGetOverridesArgs
+    {
+        public GameObjectRef instance;
+    }
+
+    [Serializable]
+    internal class PrefabAssetInfo
+    {
+        public string guid;
+        public string path;
+        public string name;
+        public string assetType;
+    }
+
+    [Serializable]
+    internal class PrefabInstanceInfo
+    {
+        public string globalObjectId;
+        public string scenePath;
+        public string hierarchyPath;
+        public string name;
+        public string status;
+    }
+
+    [Serializable]
+    internal class PrefabOverrideSummary
+    {
+        public int propertyOverrideCount;
+        public int addedComponentCount;
+        public int removedComponentCount;
+        public int addedGameObjectCount;
+        public int removedGameObjectCount;
+    }
+
+    [Serializable]
+    internal class PrefabGetResult
+    {
+        public string targetKind;
+        public PrefabAssetInfo prefab;
+        public PrefabInstanceInfo instance;
+        public PrefabAssetInfo sourcePrefab;
+        public PrefabOverrideSummary overrides;
+    }
+
+    [Serializable]
+    internal class PrefabPropertyOverrideItem
+    {
+        public string targetGlobalObjectId;
+        public string targetName;
+        public string targetType;
+        public string targetHierarchyPath;
+        public string propertyPath;
+        public string value;
+    }
+
+    [Serializable]
+    internal class PrefabAddedComponentItem
+    {
+        public string componentId;
+        public string componentType;
+        public string gameObjectGlobalObjectId;
+        public string gameObjectName;
+        public string hierarchyPath;
+    }
+
+    [Serializable]
+    internal class PrefabRemovedComponentItem
+    {
+        public string componentId;
+        public string componentType;
+        public string gameObjectGlobalObjectId;
+        public string gameObjectName;
+        public string hierarchyPath;
+    }
+
+    [Serializable]
+    internal class PrefabAddedGameObjectItem
+    {
+        public string globalObjectId;
+        public string name;
+        public string hierarchyPath;
+    }
+
+    [Serializable]
+    internal class PrefabRemovedGameObjectItem
+    {
+        public string globalObjectId;
+        public string name;
+        public string hierarchyPath;
+    }
+
+    [Serializable]
+    internal class PrefabGetOverridesResult
+    {
+        public PrefabAssetInfo prefab;
+        public PrefabInstanceInfo instance;
+        public PrefabPropertyOverrideItem[] propertyOverrides;
+        public PrefabAddedComponentItem[] addedComponents;
+        public PrefabRemovedComponentItem[] removedComponents;
+        public PrefabAddedGameObjectItem[] addedGameObjects;
+        public PrefabRemovedGameObjectItem[] removedGameObjects;
     }
 
     [Serializable]
@@ -553,6 +904,64 @@ namespace Blanketmen.UnityMcp.Control.Editor
         public string outputPath;
         public GameObjectRef sourceInstance;
         public bool overwrite;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetCopyArgs
+    {
+        public AssetRef[] targets;
+        public string destinationFolder;
+        public string conflictPolicy = "fail";
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetCreateFolderArgs
+    {
+        public string path;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetCreateMaterialArgs
+    {
+        public string outputPath;
+        public string shaderName;
+        public bool overwrite;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetCreateScriptableObjectArgs
+    {
+        public string typeName;
+        public string outputPath;
+        public bool overwrite;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetCreateTextArgs
+    {
+        public string outputPath;
+        public string content;
+        public bool overwrite;
+        public bool dryRun = true;
+        public bool apply = false;
+    }
+
+    [Serializable]
+    internal class AssetImportArgs
+    {
+        public string[] paths;
+        public bool recursive;
+        public bool forceUpdate;
         public bool dryRun = true;
         public bool apply = false;
     }

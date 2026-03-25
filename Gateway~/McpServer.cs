@@ -269,7 +269,7 @@ public sealed class McpServer
 
     private static int? ResolveControlTimeoutOverride(string toolName, JsonObject arguments)
     {
-        if (string.Equals(toolName, "unity_run_tests", StringComparison.Ordinal))
+        if (string.Equals(toolName, "unity_project_run_tests", StringComparison.Ordinal))
         {
             int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 600000);
             timeoutMs = Math.Clamp(timeoutMs, 5000, 3600000);
@@ -277,8 +277,8 @@ public sealed class McpServer
             return Math.Clamp(controlTimeout, 5000, 3900000);
         }
 
-        if (string.Equals(toolName, "unity_playmode_start", StringComparison.Ordinal) ||
-            string.Equals(toolName, "unity_playmode_stop", StringComparison.Ordinal))
+        if (string.Equals(toolName, "unity_runtime_start_playmode", StringComparison.Ordinal) ||
+            string.Equals(toolName, "unity_runtime_stop_playmode", StringComparison.Ordinal))
         {
             int timeoutMs = ReadTimeoutMs(arguments, defaultValue: 15000);
             timeoutMs = Math.Clamp(timeoutMs, 1000, 120000);

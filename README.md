@@ -28,7 +28,7 @@ By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
 Common environment variables:
 
 - `UNITY_MCP_ROOT` (default should point to `Gateway~/`)
-- `UNITY_MCP_ENABLED_MODULES`
+- `UNITY_MCP_ENABLED_MODULES` (comma-separated module names such as `project_read,scene_read,prefab_read,asset_read`)
 - `UNITY_MCP_GATEWAY_TRANSPORT` (`streamable-http` default, or `stdio`)
 - `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38110/mcp`)
 - `UNITY_MCP_CONTROL_TRANSPORT` (`http` or `pipe`)
@@ -51,6 +51,22 @@ Current Unity editor tooling manages both:
 
 ## Additional Docs
 
-- [Control overview](Documentation~/unity-mcp-control.md)
-- [Editor control](Documentation~/unity-editor-control.md)
-- [Tool modules](Documentation~/mcp-tool-modules.md)
+- [Control architecture](Documentation~/mcp-control-architecture.md)
+- [Editor control window](Documentation~/mcp-editor-control-window.md)
+- [Tool catalog](Documentation~/mcp-tool-catalog.md)
+- [Runtime tool schemas](Documentation~/mcp-tool-schemas-runtime.md)
+- [Authoring tool schemas](Documentation~/mcp-tool-schemas-authoring.md)
+- [Migration reference](Documentation~/mcp-tool-migration-reference.md)
+
+Current module taxonomy is target-first and operation-second, for example:
+
+- `project_read`, `project_execute`
+- `editor_read`, `editor_write`
+- `runtime_read`, `runtime_execute`
+- `scene_read`, `scene_execute`, `scene_write`
+- `gameobject_read`, `gameobject_write`
+- `component_read`, `component_write`
+- `prefab_read`, `prefab_write`, `asset_read`, `asset_write`
+
+Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
+The current `asset_write` foundation includes import/reimport, text creation, native asset creation, and copy/move style authoring surfaces under the same module.

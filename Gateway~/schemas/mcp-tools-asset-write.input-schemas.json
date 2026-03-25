@@ -356,6 +356,47 @@
       }
     },
     {
+      "name": "unity_asset_import",
+      "description": "Import one or many existing project-relative files or folders under Assets/.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetPath"
+            },
+            "minItems": 1
+          },
+          "recursive": {
+            "type": "boolean",
+            "default": false
+          },
+          "forceUpdate": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
       "name": "unity_asset_set_labels",
       "description": "Set/add/remove labels for an asset.",
       "inputSchema": {
@@ -402,7 +443,194 @@
           }
         ]
       }
+    },
+    {
+      "name": "unity_asset_copy",
+      "description": "Copy assets into a destination folder.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/assetRef"
+            },
+            "minItems": 1
+          },
+          "destinationFolder": {
+            "$ref": "#/$defs/folderPath"
+          },
+          "conflictPolicy": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "overwrite",
+              "rename"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets",
+          "destinationFolder"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_create_folder",
+      "description": "Create one folder path under Assets/.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/folderPath"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_create_text",
+      "description": "Create or overwrite one UTF-8 text asset and import it immediately.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "outputPath": {
+            "$ref": "#/$defs/assetPath"
+          },
+          "content": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "outputPath",
+          "content"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_create_material",
+      "description": "Create one material asset bound to a specific shader.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "outputPath": {
+            "$ref": "#/$defs/assetPath"
+          },
+          "shaderName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "outputPath",
+          "shaderName"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_asset_create_scriptable_object",
+      "description": "Create one ScriptableObject asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "typeName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outputPath": {
+            "$ref": "#/$defs/assetPath"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "typeName",
+          "outputPath"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
     }
   ]
 }
-

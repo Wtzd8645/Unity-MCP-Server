@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Unity MCP Prefab Write Tool Input Schemas",
+  "title": "Unity MCP Gameobject Write Tool Input Schemas",
   "version": "0.1.0",
   "$defs": {
     "scenePath": {
@@ -201,24 +201,43 @@
   },
   "tools": [
     {
-      "name": "unity_prefab_create",
-      "description": "Save a scene object as a prefab.",
+      "name": "unity_gameobject_create",
+      "description": "Create a new GameObject.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "source": {
+          "scenePath": {
+            "$ref": "#/$defs/scenePath"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
             "$ref": "#/$defs/gameObjectRef"
           },
-          "outputPath": {
-            "$ref": "#/$defs/prefabPath"
+          "transform": {
+            "$ref": "#/$defs/transformInput"
           },
-          "connectToInstance": {
-            "type": "boolean",
-            "default": true
-          },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            }
           },
           "dryRun": {
             "type": "boolean",
@@ -230,8 +249,7 @@
           }
         },
         "required": [
-          "source",
-          "outputPath"
+          "name"
         ],
         "additionalProperties": false,
         "allOf": [
@@ -242,18 +260,204 @@
       }
     },
     {
-      "name": "unity_prefab_create_instance",
-      "description": "Instantiate a prefab into a scene.",
+      "name": "unity_gameobject_delete",
+      "description": "Delete one or many GameObjects.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "prefab": {
-            "$ref": "#/$defs/assetRef"
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
           },
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
+          "mode": {
+            "type": "string",
+            "enum": [
+              "undoable",
+              "immediate"
+            ],
+            "default": "undoable"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_duplicate",
+      "description": "Duplicate one or many GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
           },
           "parent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "renamePattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_reparent",
+      "description": "Move objects under a new parent (or scene root).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "newParent": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "worldPositionStays": {
+            "type": "boolean",
+            "default": true
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_rename",
+      "description": "Rename a GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/$defs/gameObjectRef"
+          },
+          "newName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "target",
+          "newName"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_set_active",
+      "description": "Set active state for GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets",
+          "active"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_set_transform",
+      "description": "Set transform properties on a GameObject.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
             "$ref": "#/$defs/gameObjectRef"
           },
           "transform": {
@@ -269,7 +473,8 @@
           }
         },
         "required": [
-          "prefab"
+          "target",
+          "transform"
         ],
         "additionalProperties": false,
         "allOf": [
@@ -280,115 +485,21 @@
       }
     },
     {
-      "name": "unity_prefab_apply_overrides",
-      "description": "Apply prefab overrides from instances to source prefabs.",
+      "name": "unity_gameobject_set_tag",
+      "description": "Set a tag on one or many GameObjects.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "instances": {
+          "targets": {
             "type": "array",
             "items": {
               "$ref": "#/$defs/gameObjectRef"
             },
             "minItems": 1
           },
-          "includePropertyOverrides": {
-            "type": "boolean",
-            "default": true
-          },
-          "includeAddedComponents": {
-            "type": "boolean",
-            "default": true
-          },
-          "includeRemovedComponents": {
-            "type": "boolean",
-            "default": true
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "instances"
-        ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_prefab_revert_overrides",
-      "description": "Revert prefab overrides on instances.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "instances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/gameObjectRef"
-            },
-            "minItems": 1
-          },
-          "includePropertyOverrides": {
-            "type": "boolean",
-            "default": true
-          },
-          "includeAddedComponents": {
-            "type": "boolean",
-            "default": true
-          },
-          "includeRemovedComponents": {
-            "type": "boolean",
-            "default": true
-          },
-          "dryRun": {
-            "type": "boolean",
-            "default": true
-          },
-          "apply": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "instances"
-        ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "$ref": "#/$defs/mutateFlags"
-          }
-        ]
-      }
-    },
-    {
-      "name": "unity_prefab_unpack",
-      "description": "Unpack prefab instances.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "instances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/gameObjectRef"
-            },
-            "minItems": 1
-          },
-          "mode": {
+          "tag": {
             "type": "string",
-            "enum": [
-              "OutermostRoot",
-              "Completely"
-            ],
-            "default": "OutermostRoot"
+            "minLength": 1
           },
           "dryRun": {
             "type": "boolean",
@@ -400,7 +511,8 @@
           }
         },
         "required": [
-          "instances"
+          "targets",
+          "tag"
         ],
         "additionalProperties": false,
         "allOf": [
@@ -411,23 +523,22 @@
       }
     },
     {
-      "name": "unity_prefab_create_variant",
-      "description": "Create a prefab variant from base prefab (optionally using instance overrides).",
+      "name": "unity_gameobject_set_layer",
+      "description": "Set a layer on one or many GameObjects.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "basePrefab": {
-            "$ref": "#/$defs/assetRef"
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
           },
-          "outputPath": {
-            "$ref": "#/$defs/prefabPath"
-          },
-          "sourceInstance": {
-            "$ref": "#/$defs/gameObjectRef"
-          },
-          "overwrite": {
-            "type": "boolean",
-            "default": false
+          "layer": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
           },
           "dryRun": {
             "type": "boolean",
@@ -439,8 +550,45 @@
           }
         },
         "required": [
-          "basePrefab",
-          "outputPath"
+          "targets",
+          "layer"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/$defs/mutateFlags"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unity_gameobject_set_static",
+      "description": "Set the static flag on one or many GameObjects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/gameObjectRef"
+            },
+            "minItems": 1
+          },
+          "isStatic": {
+            "type": "boolean"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "targets",
+          "isStatic"
         ],
         "additionalProperties": false,
         "allOf": [

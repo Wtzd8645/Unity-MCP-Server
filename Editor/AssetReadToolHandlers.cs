@@ -53,7 +53,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 items = page.ToArray(),
             };
 
-            return ControlResponses.Success("unity_asset_search completed.", payload);
+            return ControlResponses.Success("unity_asset_find completed.", payload);
         }
 
         public static ControlToolCallResponse HandleAssetGet(ControlToolCallRequest request)
@@ -153,7 +153,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 edges = edges.ToArray(),
             };
 
-            return ControlResponses.Success("unity_asset_refs completed.", payload);
+            return ControlResponses.Success("unity_asset_get_references completed.", payload);
         }
 
         private static void TraverseOutboundRefs(

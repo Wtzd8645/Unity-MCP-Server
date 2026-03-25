@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity_list_scenes",
+      "name": "unity_scene_list",
       "description": "List scenes from Build Settings and/or project assets.",
       "inputSchema": {
         "type": "object",
@@ -235,40 +235,25 @@
       }
     },
     {
-      "name": "unity_open_scene",
-      "description": "Open a scene in Editor.",
+      "name": "unity_scene_list_loaded",
+      "description": "List currently loaded scenes in the editor.",
       "inputSchema": {
         "type": "object",
-        "properties": {
-          "scenePath": {
-            "$ref": "#/$defs/scenePath"
-          },
-          "openMode": {
-            "type": "string",
-            "enum": [
-              "Single",
-              "Additive",
-              "AdditiveWithoutLoading"
-            ],
-            "default": "Single"
-          },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
-          },
-          "setActive": {
-            "type": "boolean",
-            "default": true
-          }
-        },
-        "required": [
-          "scenePath"
-        ],
+        "properties": {},
         "additionalProperties": false
       }
     },
     {
-      "name": "unity_go_find",
+      "name": "unity_scene_get_active",
+      "description": "Get the currently active loaded scene.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unity_gameobject_find",
       "description": "Find scene objects by conditions.",
       "inputSchema": {
         "type": "object",
@@ -321,35 +306,6 @@
         },
         "additionalProperties": false
       }
-    },
-    {
-      "name": "unity_component_get_fields",
-      "description": "Read serialized fields from a component.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "target": {
-            "$ref": "#/$defs/gameObjectRef"
-          },
-          "componentType": {
-            "type": "string",
-            "minLength": 1
-          },
-          "componentId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "includePrivateSerialized": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "target"
-        ],
-        "additionalProperties": false
-      }
     }
   ]
 }
-

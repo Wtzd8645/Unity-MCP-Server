@@ -63,7 +63,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 items = items.ToArray(),
             };
 
-            return ControlResponses.Success("unity_get_console_logs completed.", payload);
+            return ControlResponses.Success("unity_editor_get_console_logs completed.", payload);
         }
 
         public static ControlToolCallResponse HandleClearConsole(UnityControlLogStore logStore)
@@ -77,7 +77,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 clearedEditorConsole = clearedEditorConsole,
             };
 
-            return ControlResponses.Success("unity_clear_console completed.", payload);
+            return ControlResponses.Success("unity_editor_clear_console completed.", payload);
         }
 
         public static ControlToolCallResponse HandleRunTests(
@@ -109,7 +109,7 @@ namespace Blanketmen.UnityMcp.Control.Editor
                 return ControlResponses.Error(errorMessage ?? "Failed to run tests.", errorStatus ?? "tool_exception", request.name);
             }
 
-            return ControlResponses.Success("unity_run_tests completed.", result);
+            return ControlResponses.Success("unity_project_run_tests completed.", result);
         }
 
         private static HashSet<string> BuildLevelSet(string[] levels)

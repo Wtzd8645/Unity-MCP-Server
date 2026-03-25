@@ -123,6 +123,12 @@ public sealed class ToolRegistry
             yield break;
         }
 
+        // Extract root-level $defs so they can be injected into each tool's inputSchema,
+        // allowing $ref resolution during argument validation.
+        JsonNode? rootDefs = doc.RootElement.TryGetProperty("$defs", out JsonElement defsElement)
+            ? JsonNode.Parse(defsElement.GetRawText())
+            : null;
+
         foreach (JsonElement toolElement in toolsElement.EnumerateArray())
         {
             if (!toolElement.TryGetProperty("name", out JsonElement nameElement))
@@ -143,6 +149,12 @@ public sealed class ToolRegistry
             JsonNode inputSchema = toolElement.TryGetProperty("inputSchema", out JsonElement inputSchemaElement)
                 ? JsonNode.Parse(inputSchemaElement.GetRawText()) ?? new JsonObject()
                 : new JsonObject();
+
+            // Inject $defs into the tool schema so the validator can resolve $ref entries.
+            if (rootDefs is not null && inputSchema is JsonObject inputSchemaObj && !inputSchemaObj.ContainsKey("$defs"))
+            {
+                inputSchemaObj["$defs"] = rootDefs.DeepClone();
+            }
 
             yield return new ToolDefinition(
                 Name: name,
