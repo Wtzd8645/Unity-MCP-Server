@@ -10,11 +10,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 {
     internal static class PrefabWriteToolHandlers
     {
-        public static ControlToolCallResponse HandlePrefabCreate(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetCreate(ControlToolCallRequest request)
         {
-            PrefabCreateArgs args = ControlJson.ParseArgs(
+            PrefabAssetCreateArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabCreateArgs
+                new PrefabAssetCreateArgs
                 {
                     connectToInstance = true,
                     overwrite = false,
@@ -54,7 +54,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             }
 
             var items = new List<MutationItem>();
-            MutationItem item = ControlWriteSupport.BuildGoMutationItem(source, "prefab_create");
+            MutationItem item = ControlWriteSupport.BuildGoMutationItem(source, "prefab_asset_create");
             item.path = args.outputPath;
             item.target = args.outputPath;
             items.Add(item);
@@ -62,7 +62,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             if (!shouldApply)
             {
                 item.status = "planned";
-                item.message = "Prefab create planned.";
+                item.message = "Prefab asset create planned.";
                 return ControlWriteSupport.BuildMutationResponse(request.name, false, 1, items);
             }
 
@@ -89,15 +89,15 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             item.changed = true;
             item.path = AssetDatabase.GetAssetPath(prefabAsset);
             item.guid = AssetDatabase.AssetPathToGUID(item.path);
-            item.message = "Prefab created.";
+            item.message = "Prefab asset created.";
             return ControlWriteSupport.BuildMutationResponse(request.name, true, 1, items);
         }
 
-        public static ControlToolCallResponse HandlePrefabInstantiate(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceCreate(ControlToolCallRequest request)
         {
-            PrefabInstantiateArgs args = ControlJson.ParseArgs(
+            PrefabInstanceCreateArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabInstantiateArgs
+                new PrefabInstanceCreateArgs
                 {
                     dryRun = true,
                     apply = false,
@@ -146,7 +146,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             var items = new List<MutationItem>();
             var item = new MutationItem
             {
-                action = "prefab_instantiate",
+                action = "prefab_instance_create",
                 target = prefabPath,
                 path = prefabPath,
                 status = "planned",
@@ -156,7 +156,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             if (!shouldApply)
             {
-                item.message = "Prefab instantiate planned.";
+                item.message = "Prefab instance create planned.";
                 return ControlWriteSupport.BuildMutationResponse(request.name, false, 1, items);
             }
 
@@ -168,7 +168,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return ControlWriteSupport.BuildMutationResponse(request.name, true, 1, items);
             }
 
-            Undo.RegisterCreatedObjectUndo(instance, "MCP Instantiate Prefab");
+            Undo.RegisterCreatedObjectUndo(instance, "MCP Create Prefab Instance");
             if (parent != null)
             {
                 instance.transform.SetParent(parent.transform, false);
@@ -186,15 +186,15 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             item.globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(instance).ToString();
             item.scenePath = instance.scene.path;
             item.hierarchyPath = BuildHierarchyPath(instance.transform);
-            item.message = "Prefab instantiated.";
+            item.message = "Prefab instance created.";
             return ControlWriteSupport.BuildMutationResponse(request.name, true, 1, items);
         }
 
-        public static ControlToolCallResponse HandlePrefabApplyOverrides(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceApplyOverrides(ControlToolCallRequest request)
         {
-            PrefabApplyOverridesArgs args = ControlJson.ParseArgs(
+            PrefabInstanceApplyOverridesArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabApplyOverridesArgs
+                new PrefabInstanceApplyOverridesArgs
                 {
                     includePropertyOverrides = true,
                     includeAddedComponents = true,
@@ -221,17 +221,17 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return modeError;
             }
 
-            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_apply_overrides", (root) =>
+            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_instance_apply_overrides", (root) =>
             {
                 PrefabUtility.ApplyPrefabInstance(root, InteractionMode.AutomatedAction);
             });
         }
 
-        public static ControlToolCallResponse HandlePrefabRevertOverrides(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceRevertOverrides(ControlToolCallRequest request)
         {
-            PrefabRevertOverridesArgs args = ControlJson.ParseArgs(
+            PrefabInstanceRevertOverridesArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabRevertOverridesArgs
+                new PrefabInstanceRevertOverridesArgs
                 {
                     includePropertyOverrides = true,
                     includeAddedComponents = true,
@@ -258,17 +258,17 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return modeError;
             }
 
-            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_revert_overrides", (root) =>
+            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_instance_revert_overrides", (root) =>
             {
                 PrefabUtility.RevertPrefabInstance(root, InteractionMode.AutomatedAction);
             });
         }
 
-        public static ControlToolCallResponse HandlePrefabUnpack(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceUnpack(ControlToolCallRequest request)
         {
-            PrefabUnpackArgs args = ControlJson.ParseArgs(
+            PrefabInstanceUnpackArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabUnpackArgs
+                new PrefabInstanceUnpackArgs
                 {
                     mode = "OutermostRoot",
                     dryRun = true,
@@ -289,17 +289,17 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 ? PrefabUnpackMode.Completely
                 : PrefabUnpackMode.OutermostRoot;
 
-            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_unpack", (root) =>
+            return HandlePrefabInstanceBatch(request.name, args.instances, shouldApply, "prefab_instance_unpack", (root) =>
             {
                 PrefabUtility.UnpackPrefabInstance(root, unpackMode, InteractionMode.AutomatedAction);
             });
         }
 
-        public static ControlToolCallResponse HandlePrefabCreateVariant(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetCreateVariant(ControlToolCallRequest request)
         {
-            PrefabCreateVariantArgs args = ControlJson.ParseArgs(
+            PrefabAssetCreateVariantArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabCreateVariantArgs
+                new PrefabAssetCreateVariantArgs
                 {
                     overwrite = false,
                     dryRun = true,
@@ -364,7 +364,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             var items = new List<MutationItem>();
             MutationItem item = new MutationItem
             {
-                action = "prefab_create_variant",
+                action = "prefab_asset_create_variant",
                 target = args.outputPath,
                 path = args.outputPath,
                 status = "planned",
@@ -373,7 +373,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             if (!shouldApply)
             {
-                item.message = "Prefab variant create planned.";
+                item.message = "Prefab asset variant create planned.";
                 return ControlWriteSupport.BuildMutationResponse(request.name, false, 1, items);
             }
 
@@ -406,7 +406,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 item.changed = true;
                 item.path = AssetDatabase.GetAssetPath(variantAsset);
                 item.guid = AssetDatabase.AssetPathToGUID(item.path);
-                item.message = "Prefab variant created.";
+                item.message = "Prefab asset variant created.";
                 return ControlWriteSupport.BuildMutationResponse(request.name, true, 1, items);
             }
             finally

@@ -144,12 +144,12 @@
       "risk": "low",
       "enabledByDefault": true,
       "tools": [
-        "unity_prefab_get",
-        "unity_prefab_get_instance",
-        "unity_prefab_get_overrides",
-        "unity_prefab_find_gameobjects",
-        "unity_prefab_get_gameobject",
-        "unity_prefab_get_component_fields"
+        "unity_prefab_asset_get",
+        "unity_prefab_instance_get",
+        "unity_prefab_instance_get_overrides",
+        "unity_prefab_asset_find_gameobjects",
+        "unity_prefab_asset_get_gameobject",
+        "unity_prefab_asset_get_component_fields"
       ]
     },
     {
@@ -157,12 +157,12 @@
       "risk": "medium-high",
       "enabledByDefault": false,
       "tools": [
-        "unity_prefab_create",
-        "unity_prefab_create_instance",
-        "unity_prefab_apply_overrides",
-        "unity_prefab_revert_overrides",
-        "unity_prefab_unpack",
-        "unity_prefab_create_variant"
+        "unity_prefab_asset_create",
+        "unity_prefab_instance_create",
+        "unity_prefab_instance_apply_overrides",
+        "unity_prefab_instance_revert_overrides",
+        "unity_prefab_instance_unpack",
+        "unity_prefab_asset_create_variant"
       ]
     },
     {

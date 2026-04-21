@@ -98,13 +98,13 @@ Current runtime tool names are the canonical names listed in the schema files an
 - Schema: `Gateway~/schemas/mcp-tools-gameobject-write.input-schemas.json`
 
 14. `prefab_read`
-- Tools: `unity_prefab_get`, `unity_prefab_get_instance`, `unity_prefab_get_overrides`, `unity_prefab_find_gameobjects`, `unity_prefab_get_gameobject`, `unity_prefab_get_component_fields`
+- Tools: `unity_prefab_asset_get`, `unity_prefab_instance_get`, `unity_prefab_instance_get_overrides`, `unity_prefab_asset_find_gameobjects`, `unity_prefab_asset_get_gameobject`, `unity_prefab_asset_get_component_fields`
 - Risk: low
 - Enabled by default: yes
 - Schema: `Gateway~/schemas/mcp-tools-prefab-read.input-schemas.json`
 
 15. `prefab_write`
-- Tools: `unity_prefab_create`, `unity_prefab_create_instance`, `unity_prefab_apply_overrides`, `unity_prefab_revert_overrides`, `unity_prefab_unpack`, `unity_prefab_create_variant`
+- Tools: `unity_prefab_asset_create`, `unity_prefab_instance_create`, `unity_prefab_instance_apply_overrides`, `unity_prefab_instance_revert_overrides`, `unity_prefab_instance_unpack`, `unity_prefab_asset_create_variant`
 - Risk: medium-high
 - Enabled by default: no
 - Schema: `Gateway~/schemas/mcp-tools-prefab-write.input-schemas.json`

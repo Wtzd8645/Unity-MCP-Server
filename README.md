@@ -5,18 +5,27 @@ This repository is the Unity package root and contains two components:
 - `Editor/`: Unity Editor control package source (HTTP/Named Pipe tool endpoint)
 - `Gateway~/`: MCP gateway source process (.NET, streamable HTTP)
 
-## Unity Editor Side
+## Unity Editor Control
 
 Use the Control package and open:
 
 - `Tools/Unity MCP Control`
 
-Current Unity editor tooling manages both:
+The control window manages both:
 
 - Control endpoint lifecycle (start/stop and settings)
 - Gateway process lifecycle (start/stop/restart and process monitoring)
 
-By default, Gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
+The settings panel currently provides:
+
+- Gateway process settings such as `Dotnet Executable` and `Gateway Project Path`
+- `Enabled Modules` as a multi-select dropdown sourced from `Gateway~/schemas/mcp-tool-modules.json`
+- `Control Transport` with transport-specific fields shown conditionally
+- shared control settings such as timeout, path allowlist, component allowlist, and auto-start flags
+
+By default, the gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
+
+## Runtime Contract
 
 Common environment variables:
 
@@ -31,6 +40,37 @@ Common environment variables:
 - `UNITY_MCP_ALLOWED_PATH_PREFIXES`
 - `UNITY_MCP_ALLOWED_COMPONENT_TYPES`
 
+Current runtime tool names are defined by the active schemas in `Gateway~/schemas/` and routed by `Editor/Control/ControlToolDispatcher.cs`.
+
+## Module Taxonomy
+
+The runtime taxonomy is target-first and operation-second:
+
+- `project_read`, `project_execute`, `project_write`
+- `editor_read`, `editor_execute`, `editor_write`
+- `runtime_read`, `runtime_execute`
+- `scene_read`, `scene_execute`, `scene_write`
+- `gameobject_read`, `gameobject_write`
+- `prefab_read`, `prefab_write`
+- `asset_read`, `asset_write`
+
+Current authoring boundaries are:
+
+- `scene_*`: scene container and scene asset lifecycle only
+- `gameobject_*`: scene live object inspection and mutation, including scene component operations
+- `prefab_*`: prefab module boundary, with explicit `prefab_asset_*` and `prefab_instance_*` tool names under it
+- `asset_*`: generic project asset search, inspection, import, creation, and file-level mutation
+
+The current foundation includes:
+
+- project read surfaces plus build-target switch, player build, and test execution tools
+- editor selection and console tools
+- runtime playmode status and start/stop tools
+- scene open/close/create/save tools
+- scene live GameObject and component read/write tools
+- prefab asset inspection and prefab instance lifecycle/override tools
+- asset search/reference tools plus import, copy/move, rename, delete-to-trash, and native asset creation tools
+
 ## Additional Docs
 
 - [Control architecture](Documentation~/mcp-control-architecture.md)
@@ -38,19 +78,3 @@ Common environment variables:
 - [Tool catalog](Documentation~/mcp-tool-catalog.md)
 - [Runtime tool schemas](Documentation~/mcp-tool-schemas-runtime.md)
 - [Authoring tool schemas](Documentation~/mcp-tool-schemas-authoring.md)
-- [Migration reference](Documentation~/mcp-tool-migration-reference.md)
-
-Current module taxonomy is target-first and operation-second, for example:
-
-- `project_read`, `project_execute`, `project_write`
-- `editor_read`, `editor_execute`, `editor_write`
-- `runtime_read`, `runtime_execute`
-- `scene_read`, `scene_execute`, `scene_write`
-- `gameobject_read`, `gameobject_write`
-- `prefab_read`, `prefab_write`, `asset_read`, `asset_write`
-
-Current runtime tool names are canonical names listed in `Gateway~/schemas/*.json` and routed by `Editor/Control/ControlToolDispatcher.cs`. Legacy names are historical only and are no longer part of the active runtime contract.
-The current runtime foundation also includes editor selection tools, project build settings and player/project settings read surfaces, and a thin `project_execute` build pipeline for switching active build target and building players.
-The current `gameobject_*` foundation includes scene live object operations plus scene component inspection and mutation surfaces.
-The current `prefab_read` and `prefab_write` foundations keep a single external family while separating prefab asset content operations from prefab instance summary and override flows.
-The current `asset_write` foundation includes import/reimport, text creation, native asset creation, and copy/move style authoring surfaces under the same module.

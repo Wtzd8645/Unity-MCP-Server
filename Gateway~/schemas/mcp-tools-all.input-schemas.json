@@ -2,203 +2,6 @@
     "$schema":  "https://json-schema.org/draft/2020-12/schema",
     "title":  "Unity MCP All Tool Input Schemas",
     "version":  "0.1.0",
-    "$defs":  {
-                  "scenePath":  {
-                                    "type":  "string",
-                                    "pattern":  "^Assets\\/.*\\.unity$",
-                                    "description":  "Scene path under Assets/"
-                                },
-                  "guid":  {
-                               "type":  "string",
-                               "pattern":  "^[A-Fa-f0-9]{32}$",
-                               "description":  "Unity GUID"
-                           },
-                  "assetPath":  {
-                                    "type":  "string",
-                                    "pattern":  "^Assets\\/.*$",
-                                    "description":  "Asset path under Assets/"
-                                },
-                  "folderPath":  {
-                                     "type":  "string",
-                                     "pattern":  "^Assets\\/.*$",
-                                     "description":  "Folder path under Assets/"
-                                 },
-                  "prefabPath":  {
-                                     "type":  "string",
-                                     "pattern":  "^Assets\\/.*\\.prefab$",
-                                     "description":  "Prefab path under Assets/"
-                                 },
-                  "assetRef":  {
-                                   "oneOf":  [
-                                                 {
-                                                     "type":  "object",
-                                                     "properties":  {
-                                                                        "guid":  {
-                                                                                     "$ref":  "#/$defs/guid"
-                                                                                 }
-                                                                    },
-                                                     "required":  [
-                                                                      "guid"
-                                                                  ],
-                                                     "additionalProperties":  false
-                                                 },
-                                                 {
-                                                     "type":  "object",
-                                                     "properties":  {
-                                                                        "path":  {
-                                                                                     "$ref":  "#/$defs/assetPath"
-                                                                                 }
-                                                                    },
-                                                     "required":  [
-                                                                      "path"
-                                                                  ],
-                                                     "additionalProperties":  false
-                                                 }
-                                             ]
-                               },
-                  "gameObjectRef":  {
-                                        "oneOf":  [
-                                                      {
-                                                          "type":  "object",
-                                                          "properties":  {
-                                                                             "globalObjectId":  {
-                                                                                                    "type":  "string",
-                                                                                                    "minLength":  1
-                                                                                                }
-                                                                         },
-                                                          "required":  [
-                                                                           "globalObjectId"
-                                                                       ],
-                                                          "additionalProperties":  false
-                                                      },
-                                                      {
-                                                          "type":  "object",
-                                                          "properties":  {
-                                                                             "scenePath":  {
-                                                                                               "$ref":  "#/$defs/scenePath"
-                                                                                           },
-                                                                             "hierarchyPath":  {
-                                                                                                   "type":  "string",
-                                                                                                   "minLength":  1
-                                                                                               }
-                                                                         },
-                                                          "required":  [
-                                                                           "scenePath",
-                                                                           "hierarchyPath"
-                                                                       ],
-                                                          "additionalProperties":  false
-                                                      }
-                                                  ]
-                                    },
-                  "vec3":  {
-                               "type":  "object",
-                               "properties":  {
-                                                  "x":  {
-                                                            "type":  "number"
-                                                        },
-                                                  "y":  {
-                                                            "type":  "number"
-                                                        },
-                                                  "z":  {
-                                                            "type":  "number"
-                                                        }
-                                              },
-                               "required":  [
-                                                "x",
-                                                "y",
-                                                "z"
-                                            ],
-                               "additionalProperties":  false
-                           },
-                  "transformInput":  {
-                                         "type":  "object",
-                                         "properties":  {
-                                                            "position":  {
-                                                                             "$ref":  "#/$defs/vec3"
-                                                                         },
-                                                            "rotationEuler":  {
-                                                                                  "$ref":  "#/$defs/vec3"
-                                                                              },
-                                                            "scale":  {
-                                                                          "$ref":  "#/$defs/vec3"
-                                                                      },
-                                                            "local":  {
-                                                                          "type":  "boolean",
-                                                                          "default":  true
-                                                                      }
-                                                        },
-                                         "additionalProperties":  false
-                                     },
-                  "mutateFlags":  {
-                                      "type":  "object",
-                                      "allOf":  [
-                                                    {
-                                                        "if":  {
-                                                                   "required":  [
-                                                                                    "dryRun"
-                                                                                ]
-                                                               },
-                                                        "then":  {
-                                                                     "required":  [
-                                                                                      "apply"
-                                                                                  ]
-                                                                 }
-                                                    },
-                                                    {
-                                                        "if":  {
-                                                                   "required":  [
-                                                                                    "apply"
-                                                                                ]
-                                                               },
-                                                        "then":  {
-                                                                     "required":  [
-                                                                                      "dryRun"
-                                                                                  ]
-                                                                 }
-                                                    },
-                                                    {
-                                                        "if":  {
-                                                                   "required":  [
-                                                                                    "dryRun",
-                                                                                    "apply"
-                                                                                ]
-                                                               },
-                                                        "then":  {
-                                                                     "oneOf":  [
-                                                                                   {
-                                                                                       "required":  [
-                                                                                                        "dryRun",
-                                                                                                        "apply"
-                                                                                                    ],
-                                                                                       "properties":  {
-                                                                                                          "dryRun":  {
-                                                                                                                         "const":  true
-                                                                                                                     },
-                                                                                                          "apply":  {
-                                                                                                                        "const":  false
-                                                                                                                    }
-                                                                                                      }
-                                                                                   },
-                                                                                   {
-                                                                                       "required":  [
-                                                                                                        "dryRun",
-                                                                                                        "apply"
-                                                                                                    ],
-                                                                                       "properties":  {
-                                                                                                          "dryRun":  {
-                                                                                                                         "const":  false
-                                                                                                                     },
-                                                                                                          "apply":  {
-                                                                                                                        "const":  true
-                                                                                                                    }
-                                                                                                      }
-                                                                                   }
-                                                                               ]
-                                                                 }
-                                                    }
-                                                ]
-                                  }
-              },
     "tools":  [
                   {
                       "name":  "unity_project_ping",
@@ -1515,7 +1318,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_get",
+                      "name":  "unity_prefab_asset_get",
                       "description":  "Inspect a prefab asset summary.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1531,7 +1334,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_get_instance",
+                      "name":  "unity_prefab_instance_get",
                       "description":  "Inspect a prefab instance summary.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1547,7 +1350,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_get_overrides",
+                      "name":  "unity_prefab_instance_get_overrides",
                       "description":  "Inspect detailed overrides for one prefab instance root.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1563,7 +1366,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_find_gameobjects",
+                      "name":  "unity_prefab_asset_find_gameobjects",
                       "description":  "Search GameObjects inside a prefab asset by hierarchy, type, or metadata filters.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1614,7 +1417,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_get_gameobject",
+                      "name":  "unity_prefab_asset_get_gameobject",
                       "description":  "Get a prefab asset GameObject snapshot including hierarchy, local transform, and component summary.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1645,7 +1448,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_get_component_fields",
+                      "name":  "unity_prefab_asset_get_component_fields",
                       "description":  "Read serialized fields from a component inside a prefab asset.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1675,7 +1478,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_create",
+                      "name":  "unity_prefab_asset_create",
                       "description":  "Save a scene object as a prefab.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1716,7 +1519,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_create_instance",
+                      "name":  "unity_prefab_instance_create",
                       "description":  "Instantiate a prefab into a scene.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1754,7 +1557,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_apply_overrides",
+                      "name":  "unity_prefab_instance_apply_overrides",
                       "description":  "Apply prefab overrides from instances to source prefabs.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1799,7 +1602,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_revert_overrides",
+                      "name":  "unity_prefab_instance_revert_overrides",
                       "description":  "Revert prefab overrides on instances.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1844,7 +1647,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_unpack",
+                      "name":  "unity_prefab_instance_unpack",
                       "description":  "Unpack prefab instances.",
                       "inputSchema":  {
                                           "type":  "object",
@@ -1885,7 +1688,7 @@
                                       }
                   },
                   {
-                      "name":  "unity_prefab_create_variant",
+                      "name":  "unity_prefab_asset_create_variant",
                       "description":  "Create a prefab variant from base prefab (optionally using instance overrides).",
                       "inputSchema":  {
                                           "type":  "object",

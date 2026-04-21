@@ -201,7 +201,7 @@
   },
   "tools": [
     {
-      "name": "unity_prefab_get",
+      "name": "unity_prefab_asset_get",
       "description": "Inspect a prefab asset summary.",
       "inputSchema": {
         "type": "object",
@@ -217,7 +217,7 @@
       }
     },
     {
-      "name": "unity_prefab_get_instance",
+      "name": "unity_prefab_instance_get",
       "description": "Inspect a prefab instance summary.",
       "inputSchema": {
         "type": "object",
@@ -233,7 +233,7 @@
       }
     },
     {
-      "name": "unity_prefab_get_overrides",
+      "name": "unity_prefab_instance_get_overrides",
       "description": "Inspect detailed overrides for one prefab instance root.",
       "inputSchema": {
         "type": "object",
@@ -249,7 +249,7 @@
       }
     },
     {
-      "name": "unity_prefab_find_gameobjects",
+      "name": "unity_prefab_asset_find_gameobjects",
       "description": "Search GameObjects inside a prefab asset by hierarchy, type, or metadata filters.",
       "inputSchema": {
         "type": "object",
@@ -300,7 +300,7 @@
       }
     },
     {
-      "name": "unity_prefab_get_gameobject",
+      "name": "unity_prefab_asset_get_gameobject",
       "description": "Get a prefab asset GameObject snapshot including hierarchy, local transform, and component summary.",
       "inputSchema": {
         "type": "object",
@@ -331,7 +331,7 @@
       }
     },
     {
-      "name": "unity_prefab_get_component_fields",
+      "name": "unity_prefab_asset_get_component_fields",
       "description": "Read serialized fields from a component inside a prefab asset.",
       "inputSchema": {
         "type": "object",

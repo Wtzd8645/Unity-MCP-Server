@@ -50,14 +50,14 @@ namespace Blanketmen.UnityMcp.Editor.Control
             return result;
         }
 
-        public static PrefabGameObjectGetResult BuildPrefabGameObjectGetResult(
+        public static PrefabAssetGameObjectGetResult BuildPrefabGameObjectGetResult(
             string prefabPath,
             GameObject gameObject,
             bool includeChildren,
             int childLimit)
         {
             Transform transform = gameObject.transform;
-            var result = new PrefabGameObjectGetResult
+            var result = new PrefabAssetGameObjectGetResult
             {
                 prefabPath = prefabPath,
                 hierarchyPath = BuildHierarchyPath(transform),

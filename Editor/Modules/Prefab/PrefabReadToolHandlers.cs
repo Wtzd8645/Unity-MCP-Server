@@ -11,11 +11,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 {
     internal static class PrefabReadToolHandlers
     {
-        public static ControlToolCallResponse HandlePrefabGet(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetGet(ControlToolCallRequest request)
         {
-            PrefabGetAssetArgs args = ControlJson.ParseArgs(
+            PrefabAssetGetArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetAssetArgs());
+                new PrefabAssetGetArgs());
 
             if (!HasAssetRef(args.prefab))
             {
@@ -27,22 +27,21 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return errorResponse;
             }
 
-            var payload = new PrefabGetResult
+            var payload = new PrefabAssetGetResult
             {
-                targetKind = "prefab",
                 prefab = BuildPrefabAssetInfo(prefabAsset),
                 sourcePrefab = BuildSourcePrefabInfo(prefabAsset),
                 overrides = BuildPrefabOverrideSummary(null),
             };
 
-            return ControlResponses.Success("unity_prefab_get completed.", payload);
+            return ControlResponses.Success("unity_prefab_asset_get completed.", payload);
         }
 
-        public static ControlToolCallResponse HandlePrefabGetInstance(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceGet(ControlToolCallRequest request)
         {
-            PrefabGetInstanceArgs args = ControlJson.ParseArgs(
+            PrefabInstanceGetArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetInstanceArgs());
+                new PrefabInstanceGetArgs());
 
             if (!HasGameObjectRef(args.instance))
             {
@@ -54,23 +53,22 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return errorResponse;
             }
 
-            var payload = new PrefabGetResult
+            var payload = new PrefabInstanceGetResult
             {
-                targetKind = "instance",
                 prefab = BuildPrefabAssetInfo(prefabAsset),
                 instance = BuildPrefabInstanceInfo(instanceRoot),
                 sourcePrefab = BuildSourcePrefabInfo(prefabAsset),
                 overrides = BuildPrefabOverrideSummary(instanceRoot),
             };
 
-            return ControlResponses.Success("unity_prefab_get_instance completed.", payload);
+            return ControlResponses.Success("unity_prefab_instance_get completed.", payload);
         }
 
-        public static ControlToolCallResponse HandlePrefabGetOverrides(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabInstanceGetOverrides(ControlToolCallRequest request)
         {
-            PrefabGetOverridesArgs args = ControlJson.ParseArgs(
+            PrefabInstanceGetOverridesArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetOverridesArgs());
+                new PrefabInstanceGetOverridesArgs());
 
             if (!HasGameObjectRef(args.instance))
             {
@@ -82,7 +80,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return errorResponse;
             }
 
-            var payload = new PrefabGetOverridesResult
+            var payload = new PrefabInstanceGetOverridesResult
             {
                 prefab = BuildPrefabAssetInfo(prefabAsset),
                 instance = BuildPrefabInstanceInfo(instanceRoot),
@@ -93,14 +91,14 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 removedGameObjects = BuildRemovedGameObjectItems(instanceRoot),
             };
 
-            return ControlResponses.Success("unity_prefab_get_overrides completed.", payload);
+            return ControlResponses.Success("unity_prefab_instance_get_overrides completed.", payload);
         }
 
-        public static ControlToolCallResponse HandlePrefabFindGameObjects(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetFindGameObjects(ControlToolCallRequest request)
         {
-            PrefabFindGameObjectsArgs args = ControlJson.ParseArgs(
+            PrefabAssetFindGameObjectsArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabFindGameObjectsArgs
+                new PrefabAssetFindGameObjectsArgs
                 {
                     layer = -1,
                     limit = 200,
@@ -119,18 +117,18 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             try
             {
-                var matches = new List<PrefabFindGameObjectItem>();
+                var matches = new List<PrefabAssetFindGameObjectItem>();
                 var gameObjects = new List<GameObject>();
                 ControlReadSupport.CollectGameObjectsDepthFirst(prefabRoot, gameObjects);
                 for (int i = 0; i < gameObjects.Count; i++)
                 {
                     GameObject gameObject = gameObjects[i];
-                    if (!MatchesPrefabGameObject(gameObject, args))
+                    if (!MatchesPrefabAssetGameObject(gameObject, args))
                     {
                         continue;
                     }
 
-                    matches.Add(new PrefabFindGameObjectItem
+                    matches.Add(new PrefabAssetFindGameObjectItem
                     {
                         hierarchyPath = ControlReadSupport.BuildHierarchyPath(gameObject.transform),
                         name = gameObject.name,
@@ -143,15 +141,15 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
                 int total = matches.Count;
                 PaginationRange range = ControlUtil.BuildPaginationRange(total, args.offset, args.limit, 1000);
-                List<PrefabFindGameObjectItem> page = matches.Skip(range.offset).Take(range.limit).ToList();
+                List<PrefabAssetFindGameObjectItem> page = matches.Skip(range.offset).Take(range.limit).ToList();
 
-                var payload = new PrefabFindGameObjectsResult
+                var payload = new PrefabAssetFindGameObjectsResult
                 {
                     total = total,
                     items = page.ToArray(),
                 };
 
-                return ControlResponses.Success("unity_prefab_find_gameobjects completed.", payload);
+                return ControlResponses.Success("unity_prefab_asset_find_gameobjects completed.", payload);
             }
             finally
             {
@@ -159,11 +157,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             }
         }
 
-        public static ControlToolCallResponse HandlePrefabGetGameObject(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetGetGameObject(ControlToolCallRequest request)
         {
-            PrefabGetGameObjectArgs args = ControlJson.ParseArgs(
+            PrefabAssetGetGameObjectArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetGameObjectArgs
+                new PrefabAssetGetGameObjectArgs
                 {
                     includeChildren = true,
                     childLimit = 100,
@@ -192,8 +190,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 }
 
                 int childLimit = ControlUtil.Clamp(args.childLimit, 1, 500, 100);
-                PrefabGameObjectGetResult payload = ControlReadSupport.BuildPrefabGameObjectGetResult(prefabPath, gameObject, args.includeChildren, childLimit);
-                return ControlResponses.Success("unity_prefab_get_gameobject completed.", payload);
+                PrefabAssetGameObjectGetResult payload = ControlReadSupport.BuildPrefabGameObjectGetResult(prefabPath, gameObject, args.includeChildren, childLimit);
+                return ControlResponses.Success("unity_prefab_asset_get_gameobject completed.", payload);
             }
             finally
             {
@@ -201,11 +199,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             }
         }
 
-        public static ControlToolCallResponse HandlePrefabGetComponentFields(ControlToolCallRequest request)
+        public static ControlToolCallResponse HandlePrefabAssetGetComponentFields(ControlToolCallRequest request)
         {
-            PrefabGetComponentFieldsArgs args = ControlJson.ParseArgs(
+            PrefabAssetGetComponentFieldsArgs args = ControlJson.ParseArgs(
                 request.argumentsJson,
-                new PrefabGetComponentFieldsArgs
+                new PrefabAssetGetComponentFieldsArgs
                 {
                     componentIndex = -1,
                     includePrivateSerialized = false,
@@ -238,7 +236,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     return ControlResponses.Error(componentError, "invalid_argument", request.name);
                 }
 
-                var payload = new PrefabGetComponentFieldsResult
+                var payload = new PrefabAssetGetComponentFieldsResult
                 {
                     prefabPath = prefabPath,
                     hierarchyPath = ControlReadSupport.BuildHierarchyPath(gameObject.transform),
@@ -247,7 +245,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     fields = ControlReadSupport.ExtractSerializedComponentFields(component, args.includePrivateSerialized).ToArray(),
                 };
 
-                return ControlResponses.Success("unity_prefab_get_component_fields completed.", payload);
+                return ControlResponses.Success("unity_prefab_asset_get_component_fields completed.", payload);
             }
             finally
             {
@@ -375,7 +373,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             };
         }
 
-        private static bool MatchesPrefabGameObject(GameObject gameObject, PrefabFindGameObjectsArgs args)
+        private static bool MatchesPrefabAssetGameObject(GameObject gameObject, PrefabAssetFindGameObjectsArgs args)
         {
             if (!string.IsNullOrEmpty(args.namePattern) &&
                 gameObject.name.IndexOf(args.namePattern, StringComparison.OrdinalIgnoreCase) < 0)

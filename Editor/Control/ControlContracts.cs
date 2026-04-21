@@ -930,7 +930,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabFindGameObjectsArgs
+    internal class PrefabAssetFindGameObjectsArgs
     {
         public AssetRef prefab;
         public string namePattern;
@@ -943,14 +943,14 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabFindGameObjectsResult
+    internal class PrefabAssetFindGameObjectsResult
     {
         public int total;
-        public PrefabFindGameObjectItem[] items;
+        public PrefabAssetFindGameObjectItem[] items;
     }
 
     [Serializable]
-    internal class PrefabFindGameObjectItem
+    internal class PrefabAssetFindGameObjectItem
     {
         public string hierarchyPath;
         public string name;
@@ -961,7 +961,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetGameObjectArgs
+    internal class PrefabAssetGetGameObjectArgs
     {
         public AssetRef prefab;
         public string hierarchyPath;
@@ -995,7 +995,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGameObjectGetResult
+    internal class PrefabAssetGameObjectGetResult
     {
         public string prefabPath;
         public string hierarchyPath;
@@ -1012,7 +1012,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetComponentFieldsArgs
+    internal class PrefabAssetGetComponentFieldsArgs
     {
         public AssetRef prefab;
         public string hierarchyPath;
@@ -1021,7 +1021,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetComponentFieldsResult
+    internal class PrefabAssetGetComponentFieldsResult
     {
         public string prefabPath;
         public string hierarchyPath;
@@ -1031,19 +1031,19 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetAssetArgs
+    internal class PrefabAssetGetArgs
     {
         public AssetRef prefab;
     }
 
     [Serializable]
-    internal class PrefabGetInstanceArgs
+    internal class PrefabInstanceGetArgs
     {
         public GameObjectRef instance;
     }
 
     [Serializable]
-    internal class PrefabGetOverridesArgs
+    internal class PrefabInstanceGetOverridesArgs
     {
         public GameObjectRef instance;
     }
@@ -1078,11 +1078,9 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetResult
+    internal class PrefabAssetGetResult
     {
-        public string targetKind;
         public PrefabAssetInfo prefab;
-        public PrefabInstanceInfo instance;
         public PrefabAssetInfo sourcePrefab;
         public PrefabOverrideSummary overrides;
     }
@@ -1135,7 +1133,16 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabGetOverridesResult
+    internal class PrefabInstanceGetResult
+    {
+        public PrefabAssetInfo prefab;
+        public PrefabInstanceInfo instance;
+        public PrefabAssetInfo sourcePrefab;
+        public PrefabOverrideSummary overrides;
+    }
+
+    [Serializable]
+    internal class PrefabInstanceGetOverridesResult
     {
         public PrefabAssetInfo prefab;
         public PrefabInstanceInfo instance;
@@ -1147,7 +1154,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabCreateArgs
+    internal class PrefabAssetCreateArgs
     {
         public GameObjectRef source;
         public string outputPath;
@@ -1158,7 +1165,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabInstantiateArgs
+    internal class PrefabInstanceCreateArgs
     {
         public AssetRef prefab;
         public string scenePath;
@@ -1169,7 +1176,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabApplyOverridesArgs
+    internal class PrefabInstanceApplyOverridesArgs
     {
         public GameObjectRef[] instances;
         public bool includePropertyOverrides = true;
@@ -1180,7 +1187,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabRevertOverridesArgs
+    internal class PrefabInstanceRevertOverridesArgs
     {
         public GameObjectRef[] instances;
         public bool includePropertyOverrides = true;
@@ -1191,7 +1198,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabUnpackArgs
+    internal class PrefabInstanceUnpackArgs
     {
         public GameObjectRef[] instances;
         public string mode = "OutermostRoot";
@@ -1200,7 +1207,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     }
 
     [Serializable]
-    internal class PrefabCreateVariantArgs
+    internal class PrefabAssetCreateVariantArgs
     {
         public AssetRef basePrefab;
         public string outputPath;

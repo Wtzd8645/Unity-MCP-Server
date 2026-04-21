@@ -57,15 +57,20 @@ Current runtime tool names are the canonical names listed in `Gateway~/schemas/*
 - `unity_component_add` -> `unity_gameobject_add_component`
 - `unity_component_remove` -> `unity_gameobject_remove_component`
 - `unity_component_set_fields` -> `unity_gameobject_set_component_fields`
-- `unity_prefab_create` -> `unity_prefab_create`
-- `unity_prefab_get` -> `unity_prefab_get`
-- `unity_prefab_get` (instance target) -> `unity_prefab_get_instance`
-- `unity_prefab_get_overrides` -> `unity_prefab_get_overrides`
-- `unity_prefab_instantiate` -> `unity_prefab_create_instance`
-- `unity_prefab_apply_overrides` -> `unity_prefab_apply_overrides`
-- `unity_prefab_revert_overrides` -> `unity_prefab_revert_overrides`
-- `unity_prefab_unpack` -> `unity_prefab_unpack`
-- `unity_prefab_create_variant` -> `unity_prefab_create_variant`
+- `unity_prefab_create` -> `unity_prefab_asset_create`
+- `unity_prefab_get` -> `unity_prefab_asset_get`
+- `unity_prefab_get` (instance target) -> `unity_prefab_instance_get`
+- `unity_prefab_get_instance` -> `unity_prefab_instance_get`
+- `unity_prefab_get_overrides` -> `unity_prefab_instance_get_overrides`
+- `unity_prefab_find_gameobjects` -> `unity_prefab_asset_find_gameobjects`
+- `unity_prefab_get_gameobject` -> `unity_prefab_asset_get_gameobject`
+- `unity_prefab_get_component_fields` -> `unity_prefab_asset_get_component_fields`
+- `unity_prefab_instantiate` -> `unity_prefab_instance_create`
+- `unity_prefab_create_instance` -> `unity_prefab_instance_create`
+- `unity_prefab_apply_overrides` -> `unity_prefab_instance_apply_overrides`
+- `unity_prefab_revert_overrides` -> `unity_prefab_instance_revert_overrides`
+- `unity_prefab_unpack` -> `unity_prefab_instance_unpack`
+- `unity_prefab_create_variant` -> `unity_prefab_asset_create_variant`
 - `unity_asset_copy` -> `unity_asset_copy`
 - `unity_asset_import` -> `unity_asset_import`
 - `unity_asset_create_folder` -> `unity_asset_create_folder`
