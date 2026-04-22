@@ -468,10 +468,15 @@
                                                                                        ],
                                                                               "default":  "Single"
                                                                           },
-                                                             "saveModifiedScenes":  {
-                                                                                        "type":  "boolean",
-                                                                                        "default":  false
-                                                                                    },
+                                                             "dirtyEditorContextPolicy":  {
+                                                                                      "type":  "string",
+                                                                                      "enum":  [
+                                                                                                   "ErrorIfDirty",
+                                                                                                   "SaveSaved",
+                                                                                                   "DiscardDirty"
+                                                                                               ],
+                                                                                      "default":  "ErrorIfDirty"
+                                                                                  },
                                                              "setActive":  {
                                                                                "type":  "boolean",
                                                                                "default":  true
@@ -512,10 +517,15 @@
                                                                                  "type":  "boolean",
                                                                                  "default":  true
                                                                              },
-                                                             "saveModifiedScene":  {
-                                                                                       "type":  "boolean",
-                                                                                       "default":  false
-                                                                                   }
+                                                             "dirtyEditorContextPolicy":  {
+                                                                                      "type":  "string",
+                                                                                      "enum":  [
+                                                                                                   "ErrorIfDirty",
+                                                                                                   "SaveSaved",
+                                                                                                   "DiscardDirty"
+                                                                                               ],
+                                                                                      "default":  "ErrorIfDirty"
+                                                                                  }
                                                          },
                                           "required":  [
                                                            "scenePath"
@@ -556,10 +566,15 @@
                                                                                "type":  "boolean",
                                                                                "default":  false
                                                                            },
-                                                             "saveModifiedScenes":  {
-                                                                                        "type":  "boolean",
-                                                                                        "default":  false
-                                                                                    },
+                                                             "dirtyEditorContextPolicy":  {
+                                                                                      "type":  "string",
+                                                                                      "enum":  [
+                                                                                                   "ErrorIfDirty",
+                                                                                                   "SaveSaved",
+                                                                                                   "DiscardDirty"
+                                                                                               ],
+                                                                                      "default":  "ErrorIfDirty"
+                                                                                  },
                                                              "dryRun":  {
                                                                             "type":  "boolean",
                                                                             "default":  true

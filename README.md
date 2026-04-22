@@ -61,6 +61,10 @@ Current authoring boundaries are:
 - `prefab_*`: prefab module boundary, with explicit `prefab_asset_*` and `prefab_instance_*` tool names under it
 - `asset_*`: generic project asset search, inspection, import, creation, and file-level mutation
 
+AI temporary scene workflows should prefer additive scene loading and closing over replacing the user's current loaded scene setup.
+
+Scene context-changing tools use `dirtyEditorContextPolicy` so dirty loaded scenes and dirty Prefab Stage sessions are handled without interactive save prompts.
+
 The current foundation includes:
 
 - project read surfaces plus build-target switch, player build, and test execution tools

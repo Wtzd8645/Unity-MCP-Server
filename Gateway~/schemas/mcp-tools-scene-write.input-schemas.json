@@ -233,9 +233,14 @@
             "type": "boolean",
             "default": false
           },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
+          "dirtyEditorContextPolicy": {
+            "type": "string",
+            "enum": [
+              "ErrorIfDirty",
+              "SaveSaved",
+              "DiscardDirty"
+            ],
+            "default": "ErrorIfDirty"
           },
           "dryRun": {
             "type": "boolean",

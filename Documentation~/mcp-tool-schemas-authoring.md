@@ -39,7 +39,7 @@ Prefab tools keep the external `prefab_read` / `prefab_write` module boundary wh
 
 ## Write surfaces
 
-- `unity_scene_create`: create and save a new scene asset
+- `unity_scene_create`: create and save a new scene asset; AI temporary scenes should prefer `Additive`, while `Single` uses explicit dirty editor-context policy
 - `unity_scene_save`: save the active or specified loaded scene
 - `unity_scene_save_all`: save all loaded scenes that already have asset paths
 - `unity_gameobject_create`, `unity_gameobject_delete`, `unity_gameobject_duplicate`, `unity_gameobject_reparent`, `unity_gameobject_rename`, `unity_gameobject_set_active`: current GameObject mutation tools
@@ -55,6 +55,7 @@ Prefab tools keep the external `prefab_read` / `prefab_write` module boundary wh
 ## Shared mutation rules
 
 - Write schemas support `dryRun` and `apply` as an inverse pair
+- `unity_scene_create` uses `dirtyEditorContextPolicy` for `Single` scene replacement and Prefab Stage exit instead of interactive save prompts
 - If either `dryRun` or `apply` is provided, the other must also be provided
 - If both are omitted, schemas and handlers default to dry-run behavior with `dryRun=true` and `apply=false`
 - Batch write is used only when one payload applies to multiple targets

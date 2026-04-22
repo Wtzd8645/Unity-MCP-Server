@@ -37,6 +37,12 @@ Current runtime tool names are the canonical names listed in `Gateway~/schemas/*
 - `unity_scene_set_active` -> `unity_scene_set_active`
 - `unity_scene_close` -> `unity_scene_close`
 - `unity_scene_create` -> `unity_scene_create`
+- `unity_scene_open.saveModifiedScenes=true` -> `unity_scene_open.dirtyEditorContextPolicy=SaveSaved`
+- `unity_scene_open.saveModifiedScenes=false` -> `unity_scene_open.dirtyEditorContextPolicy=ErrorIfDirty`
+- `unity_scene_close.saveModifiedScene=true` -> `unity_scene_close.dirtyEditorContextPolicy=SaveSaved`
+- `unity_scene_close.saveModifiedScene=false` -> `unity_scene_close.dirtyEditorContextPolicy=ErrorIfDirty`
+- `unity_scene_create.saveModifiedScenes=true` -> `unity_scene_create.dirtyEditorContextPolicy=SaveSaved`
+- `unity_scene_create.saveModifiedScenes=false` -> `unity_scene_create.dirtyEditorContextPolicy=ErrorIfDirty`
 - `unity_scene_save` -> `unity_scene_save`
 - `unity_scene_save_all` -> `unity_scene_save_all`
 - `unity_go_find` -> `unity_gameobject_find`

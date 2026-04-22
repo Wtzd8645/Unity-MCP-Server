@@ -53,13 +53,14 @@ This document is a summary. When there is any mismatch, the schema files and dis
 - `unity_scene_list`: scenes from Build Settings and or project assets
 - `unity_scene_list_loaded`: currently loaded scenes in editor order
 - `unity_scene_get_active`: active loaded scene summary
-- `unity_scene_open`: open a scene asset into the editor
+- `unity_scene_open`: open a scene asset into the editor with explicit dirty editor-context policy; AI temporary scenes should prefer `Additive`
 - `unity_scene_set_active`: switch the active scene among loaded scenes
-- `unity_scene_close`: close a loaded scene, optionally saving first
+- `unity_scene_close`: close a loaded scene using explicit dirty editor-context policy instead of interactive save prompts
 
 ## Shared rules
 
 - Scene paths live under `Assets/` and end with `.unity`
+- `unity_scene_open` and `unity_scene_close` use `dirtyEditorContextPolicy` for loaded scenes and Prefab Stage transitions instead of interactive save prompts
 - `unity_project_build_player` only accepts project-relative output paths under `Builds/`
 - `unity_project_build_player` uses the active build target and the enabled Build Settings scene list; it does not accept per-call scene overrides
 - `project_write` uses `dryRun/apply` and replaces the full Build Settings scene list in the order provided
