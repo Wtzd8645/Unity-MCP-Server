@@ -133,6 +133,7 @@ Current runtime tool names are the canonical names listed in the schema files an
 
 2. Safe edit profile
 - Modules: `project_read`, `editor_read`, `editor_execute`, `runtime_read`, `scene_read`, `scene_execute`, `gameobject_read`, `prefab_read`, `gameobject_write`, `asset_read`
+- Notes: scene execute tools use explicit dirty editor-context policies for loaded scenes and Prefab Stage transitions instead of interactive save prompts
 
 3. Full automation profile
 - Modules: all modules

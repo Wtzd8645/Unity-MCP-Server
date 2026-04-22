@@ -289,7 +289,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     {
         public string scenePath;
         public string openMode;
-        public bool saveModifiedScenes;
+        public string dirtyEditorContextPolicy = "ErrorIfDirty";
         public bool setActive;
     }
 
@@ -356,7 +356,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     {
         public string scenePath;
         public bool removeScene = true;
-        public bool saveModifiedScene;
+        public string dirtyEditorContextPolicy = "ErrorIfDirty";
     }
 
     [Serializable]
@@ -908,7 +908,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         public string openMode = "Additive";
         public bool setActive = true;
         public bool overwrite;
-        public bool saveModifiedScenes;
+        public string dirtyEditorContextPolicy = "ErrorIfDirty";
         public bool dryRun = true;
         public bool apply = false;
     }

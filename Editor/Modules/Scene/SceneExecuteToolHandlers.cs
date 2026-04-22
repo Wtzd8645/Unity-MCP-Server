@@ -16,7 +16,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 new OpenSceneArgs
                 {
                     openMode = "Single",
-                    saveModifiedScenes = false,
+                    dirtyEditorContextPolicy = "ErrorIfDirty",
                     setActive = true,
                 });
 
@@ -30,17 +30,39 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return ControlResponses.Error("Scene not found: " + args.scenePath, "not_found", request.name);
             }
 
-            if (args.saveModifiedScenes && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (!EditorContextDirtyPolicySupport.TryParsePolicy(
+                    args.dirtyEditorContextPolicy,
+                    request.name,
+                    out EditorContextDirtyPolicySupport.EditorContextDirtyPolicy dirtyEditorContextPolicy,
+                    out ControlToolCallResponse policyError))
             {
-                return ControlResponses.Error("Open scene cancelled by user.", "cancelled", request.name);
+                return policyError;
             }
 
             OpenSceneMode mode = ParseOpenSceneMode(args.openMode);
-            Scene openedScene = EditorSceneManager.OpenScene(args.scenePath, mode);
+            EditorContextDirtyPolicySupport.SingleSceneReplacementPlan replacementPlan = default(EditorContextDirtyPolicySupport.SingleSceneReplacementPlan);
+            if (!EditorContextDirtyPolicySupport.TryPrepareForSceneOperation(
+                    request.name,
+                    dirtyEditorContextPolicy,
+                    mode == OpenSceneMode.Single,
+                    out replacementPlan,
+                    out ControlToolCallResponse preflightError))
+            {
+                return preflightError;
+            }
+
+            Scene openedScene;
+            OpenSceneMode effectiveMode = replacementPlan.useSingleMode ? mode : OpenSceneMode.Additive;
+            openedScene = EditorSceneManager.OpenScene(args.scenePath, effectiveMode);
 
             if (args.setActive && openedScene.IsValid())
             {
                 SceneManager.SetActiveScene(openedScene);
+            }
+
+            if (mode == OpenSceneMode.Single)
+            {
+                EditorContextDirtyPolicySupport.TryCloseScratchScene(replacementPlan.scratchScene);
             }
 
             var payload = new OpenSceneResult
@@ -91,12 +113,21 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 new SceneCloseArgs
                 {
                     removeScene = true,
-                    saveModifiedScene = false,
+                    dirtyEditorContextPolicy = "ErrorIfDirty",
                 });
 
             if (string.IsNullOrEmpty(args.scenePath))
             {
                 return ControlResponses.Error("scenePath is required.", "invalid_argument", request.name);
+            }
+
+            if (!EditorContextDirtyPolicySupport.TryParsePolicy(
+                    args.dirtyEditorContextPolicy,
+                    request.name,
+                    out EditorContextDirtyPolicySupport.EditorContextDirtyPolicy dirtyEditorContextPolicy,
+                    out ControlToolCallResponse policyError))
+            {
+                return policyError;
             }
 
             Scene scene = SceneManager.GetSceneByPath(args.scenePath);
@@ -105,17 +136,42 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return ControlResponses.Error("Scene is not loaded: " + args.scenePath, "not_found", request.name);
             }
 
-            if (args.saveModifiedScene && scene.isDirty)
+            if (dirtyEditorContextPolicy == EditorContextDirtyPolicySupport.EditorContextDirtyPolicy.ErrorIfDirty &&
+                scene.isDirty)
             {
-                if (string.IsNullOrEmpty(scene.path))
-                {
-                    return ControlResponses.Error("Cannot save a loaded untitled scene before close.", "invalid_argument", request.name);
-                }
+                return ControlResponses.Error(
+                    "Scene is dirty. Save it first or set dirtyEditorContextPolicy to SaveSaved or DiscardDirty. Dirty scene: " + (string.IsNullOrEmpty(scene.path) ? scene.name : scene.path),
+                    "conflict",
+                    request.name);
+            }
 
-                if (!EditorSceneManager.SaveScene(scene))
-                {
-                    return ControlResponses.Error("Failed to save scene before close: " + scene.path, "tool_exception", request.name);
-                }
+            if (dirtyEditorContextPolicy == EditorContextDirtyPolicySupport.EditorContextDirtyPolicy.SaveSaved &&
+                scene.isDirty &&
+                string.IsNullOrEmpty(scene.path))
+            {
+                return ControlResponses.Error(
+                    "Cannot auto-save an untitled dirty scene. Save it explicitly or use dirtyEditorContextPolicy=DiscardDirty. Dirty scene: " + scene.name,
+                    "invalid_argument",
+                    request.name);
+            }
+
+            if (!EditorContextDirtyPolicySupport.TryPrepareForSceneOperation(
+                    request.name,
+                    dirtyEditorContextPolicy,
+                    false,
+                    out _,
+                    out ControlToolCallResponse contextError))
+            {
+                return contextError;
+            }
+
+            if (!EditorContextDirtyPolicySupport.TryApplySceneClosePolicy(
+                    scene,
+                    request.name,
+                    dirtyEditorContextPolicy,
+                    out ControlToolCallResponse closePolicyError))
+            {
+                return closePolicyError;
             }
 
             if (!EditorSceneManager.CloseScene(scene, args.removeScene))

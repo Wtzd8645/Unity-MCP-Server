@@ -20,7 +20,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     openMode = "Additive",
                     setActive = true,
                     overwrite = false,
-                    saveModifiedScenes = false,
+                    dirtyEditorContextPolicy = "ErrorIfDirty",
                     dryRun = true,
                     apply = false,
                 });
@@ -51,18 +51,25 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return ControlWriteSupport.BuildMutationResponse(request.name, false, 1, items);
             }
 
-            NewSceneMode openMode = ParseNewSceneMode(args.openMode);
-            if (openMode == NewSceneMode.Single && HasDirtyLoadedScenes())
+            if (!EditorContextDirtyPolicySupport.TryParsePolicy(
+                    args.dirtyEditorContextPolicy,
+                    request.name,
+                    out EditorContextDirtyPolicySupport.EditorContextDirtyPolicy dirtyEditorContextPolicy,
+                    out ControlToolCallResponse policyError))
             {
-                if (!args.saveModifiedScenes)
-                {
-                    return ControlResponses.Error("Refusing to create a scene in Single mode while modified scenes are open. Set saveModifiedScenes=true or use Additive.", "invalid_argument", request.name);
-                }
+                return policyError;
+            }
 
-                if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                {
-                    return ControlResponses.Error("Scene creation cancelled while saving modified scenes.", "cancelled", request.name);
-                }
+            NewSceneMode openMode = ParseNewSceneMode(args.openMode);
+            EditorContextDirtyPolicySupport.SingleSceneReplacementPlan replacementPlan = default(EditorContextDirtyPolicySupport.SingleSceneReplacementPlan);
+            if (!EditorContextDirtyPolicySupport.TryPrepareForSceneOperation(
+                    request.name,
+                    dirtyEditorContextPolicy,
+                    openMode == NewSceneMode.Single,
+                    out replacementPlan,
+                    out ControlToolCallResponse preflightError))
+            {
+                return preflightError;
             }
 
             string existingPath = AssetDatabase.LoadAssetAtPath<SceneAsset>(outputPath) == null ? null : outputPath;
@@ -80,7 +87,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             Scene createdScene = default(Scene);
             try
             {
-                createdScene = EditorSceneManager.NewScene(ParseNewSceneSetup(args.setup), openMode);
+                NewSceneMode effectiveOpenMode = replacementPlan.useSingleMode ? openMode : NewSceneMode.Additive;
+                createdScene = EditorSceneManager.NewScene(ParseNewSceneSetup(args.setup), effectiveOpenMode);
                 if (!createdScene.IsValid())
                 {
                     return ControlResponses.Error("Failed to create scene.", "tool_exception", request.name);
@@ -102,6 +110,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 item.scenePath = createdScene.path;
                 item.target = outputPath;
                 item.message = "Scene created.";
+                if (openMode == NewSceneMode.Single)
+                {
+                    EditorContextDirtyPolicySupport.TryCloseScratchScene(replacementPlan.scratchScene);
+                }
+
                 return ControlWriteSupport.BuildMutationResponse(request.name, true, 1, items);
             }
             catch (Exception ex)
@@ -270,20 +283,6 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 path = targetPath,
                 scenePath = targetPath,
             };
-        }
-
-        private static bool HasDirtyLoadedScenes()
-        {
-            int sceneCount = SceneManager.sceneCount;
-            for (int i = 0; i < sceneCount; i++)
-            {
-                if (SceneManager.GetSceneAt(i).isDirty)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static bool TryNormalizeSceneAssetPath(string path, out string normalizedPath, out string error)

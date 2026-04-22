@@ -218,9 +218,14 @@
             ],
             "default": "Single"
           },
-          "saveModifiedScenes": {
-            "type": "boolean",
-            "default": false
+          "dirtyEditorContextPolicy": {
+            "type": "string",
+            "enum": [
+              "ErrorIfDirty",
+              "SaveSaved",
+              "DiscardDirty"
+            ],
+            "default": "ErrorIfDirty"
           },
           "setActive": {
             "type": "boolean",
@@ -262,9 +267,14 @@
             "type": "boolean",
             "default": true
           },
-          "saveModifiedScene": {
-            "type": "boolean",
-            "default": false
+          "dirtyEditorContextPolicy": {
+            "type": "string",
+            "enum": [
+              "ErrorIfDirty",
+              "SaveSaved",
+              "DiscardDirty"
+            ],
+            "default": "ErrorIfDirty"
           }
         },
         "required": [
