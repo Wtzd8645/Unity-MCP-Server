@@ -7,6 +7,7 @@ namespace Blanketmen.UnityMcp.Gateway;
 
 public sealed class HttpUnityControlClient : IUnityControlClient
 {
+    private const int ResponseGraceMs = 1000;
     private readonly HttpClient httpClient;
     private readonly int timeoutMs;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -36,7 +37,7 @@ public sealed class HttpUnityControlClient : IUnityControlClient
         };
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(timeoutMsOverride ?? timeoutMs);
+        timeoutCts.CancelAfter((timeoutMsOverride ?? timeoutMs) + ResponseGraceMs);
 
         HttpResponseMessage response;
         try

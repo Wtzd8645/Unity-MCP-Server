@@ -21,7 +21,7 @@ if (string.Equals(transport, "stdio", StringComparison.Ordinal))
 else
 {
     using var gateway = StreamableHttpGateway.CreateFromEnvironment(server);
-    await gateway.RunAsync(Console.Error, cancellation.Token);
+    await gateway.RunAsync(Console.Out, cancellation.Token);
 }
 
 static string ResolveGatewayTransport(string? transportEnv)

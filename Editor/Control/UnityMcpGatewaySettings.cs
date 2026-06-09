@@ -14,8 +14,10 @@ namespace Blanketmen.UnityMcp.Editor.Control
         private const string DefaultDotnetExecutable = "dotnet";
         private const string DefaultGatewayProjectRelativePath = "Gateway~/UnityMcpGateway.csproj";
         private const string PackageName = "com.blanketmen.unity-mcp-server";
-        private const ControlTransportKind DefaultControlTransport = ControlTransportKind.Http;
-        private const string DefaultControlHttpUrl = "http://127.0.0.1:38100/";
+        private const ControlTransportKind DefaultControlTransport = ControlTransportKind.Pipe;
+        private const string DefaultGatewayHttpUrl = "http://127.0.0.1:38100/mcp";
+        private const string LegacyControlHttpUrl = "http://127.0.0.1:38100/";
+        private const string DefaultControlHttpUrl = "http://127.0.0.1:38110/";
         private const string DefaultControlPipeName = "unity-mcp-control";
         private const int DefaultControlTimeoutMs = 5000;
         private const int DefaultStartupProbeTimeoutMs = 8000;
@@ -28,6 +30,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         [SerializeField] private string dotnetExecutable = DefaultDotnetExecutable;
         [SerializeField] private string gatewayProjectPath = DefaultGatewayProjectRelativePath;
         [SerializeField] private string enabledModules = string.Empty;
+        [SerializeField] private string gatewayHttpUrl = DefaultGatewayHttpUrl;
         [SerializeField] private ControlTransportKind controlTransport = DefaultControlTransport;
         [SerializeField] private string controlHttpUrl = DefaultControlHttpUrl;
         [SerializeField] private string controlPipeName = DefaultControlPipeName;
@@ -38,6 +41,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         [FormerlySerializedAs("autoStartGatewayOnLoad")]
         [SerializeField] private bool autoStartControlOnLoad = true;
         [SerializeField] private bool autoStartGatewayWithControl = true;
+        [SerializeField] private bool defaultTopologyMigrated;
 
         public string RepositoryRootOverride
         {
@@ -61,6 +65,12 @@ namespace Blanketmen.UnityMcp.Editor.Control
         {
             get { return enabledModules ?? string.Empty; }
             set { enabledModules = value == null ? string.Empty : value.Trim(); }
+        }
+
+        public string GatewayHttpUrl
+        {
+            get { return string.IsNullOrWhiteSpace(gatewayHttpUrl) ? DefaultGatewayHttpUrl : gatewayHttpUrl.Trim(); }
+            set { gatewayHttpUrl = string.IsNullOrWhiteSpace(value) ? DefaultGatewayHttpUrl : value.Trim(); }
         }
 
         public ControlTransportKind ControlTransport
@@ -258,9 +268,22 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
         public void EnsureDefaults()
         {
+            if (!defaultTopologyMigrated)
+            {
+                if (controlTransport == ControlTransportKind.Http &&
+                    string.Equals(ControlHttpUrl, LegacyControlHttpUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    controlTransport = ControlTransportKind.Pipe;
+                    controlHttpUrl = DefaultControlHttpUrl;
+                }
+
+                defaultTopologyMigrated = true;
+            }
+
             DotnetExecutable = DotnetExecutable;
             GatewayProjectPath = GatewayProjectPath;
             EnabledModules = EnabledModules;
+            GatewayHttpUrl = GatewayHttpUrl;
             ControlTransport = ControlTransport;
             ControlHttpUrl = ControlHttpUrl;
             ControlPipeName = ControlPipeName;

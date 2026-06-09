@@ -23,7 +23,8 @@ The settings panel currently provides:
 - `Control Transport` with transport-specific fields shown conditionally
 - shared control settings such as timeout, path allowlist, component allowlist, and auto-start flags
 
-By default, the gateway serves MCP Streamable HTTP at `http://127.0.0.1:38110/mcp`.
+By default, MCP clients connect to the gateway at `http://127.0.0.1:38100/mcp`.
+The gateway calls Unity Control over Named Pipe, so only one HTTP endpoint is exposed.
 
 ## Runtime Contract
 
@@ -32,9 +33,9 @@ Common environment variables:
 - `UNITY_MCP_ROOT` (default should point to `Gateway~/`)
 - `UNITY_MCP_ENABLED_MODULES` (comma-separated module names such as `project_read,scene_read,prefab_read,asset_read`)
 - `UNITY_MCP_GATEWAY_TRANSPORT` (`streamable-http` default, or `stdio`)
-- `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38110/mcp`)
-- `UNITY_MCP_CONTROL_TRANSPORT` (`http` or `pipe`)
-- `UNITY_MCP_CONTROL_HTTP_URL`
+- `UNITY_MCP_STREAMABLE_HTTP_URL` (default `http://127.0.0.1:38100/mcp`)
+- `UNITY_MCP_CONTROL_TRANSPORT` (`pipe` default, or `http`)
+- `UNITY_MCP_CONTROL_HTTP_URL` (optional HTTP control endpoint, default `http://127.0.0.1:38110/`)
 - `UNITY_MCP_CONTROL_PIPE_NAME`
 - `UNITY_MCP_CONTROL_TIMEOUT_MS`
 - `UNITY_MCP_ALLOWED_PATH_PREFIXES`

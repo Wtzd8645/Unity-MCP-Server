@@ -476,6 +476,9 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             private readonly List<EventSubscription> _subscriptions = new List<EventSubscription>();
             private readonly object _sync = new object();
             private object _rootResult;
+            private object _registeredCallback;
+            private Type _registeredCallbackType;
+            private MethodInfo _unregisterCallbacks;
 
             public readonly List<RunTestCaseResult> Results = new List<RunTestCaseResult>();
             public string RunError { get; private set; }
@@ -557,6 +560,11 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             public void TryAttach(object api, Type apiType)
             {
+                if (TryRegisterCallbacks(api, apiType))
+                {
+                    return;
+                }
+
                 string[] candidateNames = { "RunFinished", "RunStarted", "TestFinished", "TestStarted" };
                 for (int i = 0; i < candidateNames.Length; i++)
                 {
@@ -582,7 +590,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             public void TryDetach(MainThreadActionInvoker invoker, object api, Type apiType)
             {
-                if (_subscriptions.Count == 0)
+                if (_subscriptions.Count == 0 && _registeredCallback == null)
                 {
                     return;
                 }
@@ -590,6 +598,15 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 invoker(
                     () =>
                     {
+                        if (_registeredCallback != null && _unregisterCallbacks != null)
+                        {
+                            MethodInfo unregister = _unregisterCallbacks.MakeGenericMethod(_registeredCallbackType);
+                            unregister.Invoke(api, new[] { _registeredCallback });
+                            _registeredCallback = null;
+                            _registeredCallbackType = null;
+                            _unregisterCallbacks = null;
+                        }
+
                         for (int i = 0; i < _subscriptions.Count; i++)
                         {
                             EventSubscription sub = _subscriptions[i];
@@ -600,6 +617,75 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     },
                     5000,
                     out _);
+            }
+
+            private bool TryRegisterCallbacks(object api, Type apiType)
+            {
+                MethodInfo register = apiType
+                    .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                    .FirstOrDefault(m =>
+                        string.Equals(m.Name, "RegisterCallbacks", StringComparison.Ordinal) &&
+                        m.IsGenericMethodDefinition &&
+                        m.GetParameters().Length >= 1);
+                MethodInfo unregister = apiType
+                    .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                    .FirstOrDefault(m =>
+                        string.Equals(m.Name, "UnregisterCallbacks", StringComparison.Ordinal) &&
+                        m.IsGenericMethodDefinition &&
+                        m.GetParameters().Length == 1);
+                if (register == null || unregister == null)
+                {
+                    return false;
+                }
+
+                Type callbackType = register.GetGenericArguments()[0]
+                    .GetGenericParameterConstraints()
+                    .FirstOrDefault(type => type.IsInterface);
+                if (callbackType == null)
+                {
+                    return false;
+                }
+
+                MethodInfo createProxy = typeof(DispatchProxy)
+                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .First(m => string.Equals(m.Name, "Create", StringComparison.Ordinal) &&
+                                m.IsGenericMethodDefinition &&
+                                m.GetGenericArguments().Length == 2);
+                object callback = createProxy
+                    .MakeGenericMethod(callbackType, typeof(RunTestsCallbacksProxy))
+                    .Invoke(null, null);
+                ((RunTestsCallbacksProxy)callback).Callback = HandleCallback;
+
+                MethodInfo closedRegister = register.MakeGenericMethod(callbackType);
+                ParameterInfo[] parameters = closedRegister.GetParameters();
+                object[] arguments = parameters.Length == 1
+                    ? new[] { callback }
+                    : new[] { callback, (object)0 };
+                closedRegister.Invoke(api, arguments);
+
+                _registeredCallback = callback;
+                _registeredCallbackType = callbackType;
+                _unregisterCallbacks = unregister;
+                return true;
+            }
+
+            private void HandleCallback(string methodName, object value)
+            {
+                switch (methodName)
+                {
+                    case "RunFinished":
+                        OnRunFinished(value);
+                        break;
+                    case "RunStarted":
+                        OnRunStarted(value);
+                        break;
+                    case "TestFinished":
+                        OnTestFinished(value);
+                        break;
+                    case "TestStarted":
+                        OnTestStarted(value);
+                        break;
+                }
             }
 
             private static object GetEventTarget(object api, EventInfo eventInfo)
@@ -799,6 +885,19 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     Delegate = @delegate;
                 }
             }
+
+        }
+    }
+
+    public class RunTestsCallbacksProxy : DispatchProxy
+    {
+        public Action<string, object> Callback;
+
+        protected override object Invoke(MethodInfo targetMethod, object[] args)
+        {
+            object value = args != null && args.Length > 0 ? args[0] : null;
+            Callback?.Invoke(targetMethod.Name, value);
+            return null;
         }
     }
 }

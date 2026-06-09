@@ -7,7 +7,7 @@ namespace Blanketmen.UnityMcp.Gateway;
 
 public sealed class StreamableHttpGateway : IDisposable
 {
-    private const string DefaultEndpoint = "http://127.0.0.1:38110/mcp";
+    private const string DefaultEndpoint = "http://127.0.0.1:38100/mcp";
 
     private readonly McpServer _mcpServer;
     private readonly HttpListener _listener;
@@ -199,7 +199,7 @@ public sealed class StreamableHttpGateway : IDisposable
             return;
         }
 
-        bool useEventStream = AcceptsEventStream(request);
+        bool useEventStream = AcceptsEventStream(request) && !AcceptsJson(request);
         if (parsed is JsonObject singleRequest)
         {
             JsonObject? singleResponse = await _mcpServer.ProcessRequestAsync(singleRequest, log, cancellationToken);
@@ -351,6 +351,13 @@ public sealed class StreamableHttpGateway : IDisposable
     {
         string? accept = request.Headers["Accept"];
         return accept?.IndexOf("text/event-stream", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static bool AcceptsJson(HttpListenerRequest request)
+    {
+        string? accept = request.Headers["Accept"];
+        return accept?.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               accept?.IndexOf("*/*", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private static string NormalizePath(string? path)

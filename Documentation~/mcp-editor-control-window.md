@@ -21,9 +21,10 @@ This document describes the Unity window used to start, stop, and configure the 
 
 - `Dotnet Executable`
 - `Gateway Project Path`
+- `Gateway HTTP URL`: default `http://127.0.0.1:38100/mcp`
 - `Enabled Modules`
-- `Control Transport`: `http` or `pipe`
-- `Control HTTP URL`: default `http://127.0.0.1:38100/`
+- `Control Transport`: `pipe` by default, or `http`
+- `Control HTTP URL`: optional, default `http://127.0.0.1:38110/`
 - `Control Pipe Name`: default `unity-mcp-control`
 - `Control Timeout (ms)`
 - `Allowed Path Prefixes`
@@ -43,4 +44,5 @@ Settings are stored in `ProjectSettings/UnityMcpGatewaySettings.asset`.
 
 - Control not reachable: verify the control transport and the matching HTTP URL or pipe name on both sides.
 - Control start failed: check Unity Console for editor exceptions and port or pipe conflicts.
+- HTTP port conflict: Gateway HTTP and Control HTTP must use different host/port authorities.
 - Gateway start failed: verify `dotnet` is available and `Gateway Project Path` points to `Gateway~/UnityMcpGateway.csproj`.

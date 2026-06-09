@@ -19,7 +19,7 @@ public static class UnityControlClientFactory
             return new NamedPipeUnityControlClient(pipeName, timeoutMs);
         }
 
-        string rawUrl = Environment.GetEnvironmentVariable("UNITY_MCP_CONTROL_HTTP_URL") ?? "http://127.0.0.1:38100/";
+        string rawUrl = Environment.GetEnvironmentVariable("UNITY_MCP_CONTROL_HTTP_URL") ?? "http://127.0.0.1:38110/";
         if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? baseUri))
         {
             throw new InvalidOperationException(
@@ -31,9 +31,9 @@ public static class UnityControlClientFactory
 
     private static UnityControlTransport ParseTransport(string? value)
     {
-        return string.Equals(value, "pipe", StringComparison.OrdinalIgnoreCase)
-            ? UnityControlTransport.Pipe
-            : UnityControlTransport.Http;
+        return string.Equals(value, "http", StringComparison.OrdinalIgnoreCase)
+            ? UnityControlTransport.Http
+            : UnityControlTransport.Pipe;
     }
 
     private static int ParseInt(string envName, int defaultValue, int min, int max)

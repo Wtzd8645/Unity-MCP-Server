@@ -14,7 +14,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     public static class UnityMcpControlServer
     {
         private const string ControlVersion = "0.1.0";
-        private const string DefaultHttpPrefix = "http://127.0.0.1:38100/";
+        private const string DefaultHttpPrefix = "http://127.0.0.1:38110/";
         private const string DefaultPipeName = "unity-mcp-control";
         private const int MainThreadTimeoutMs = 5000;
         private const int MaxLogBufferSize = 5000;
@@ -90,11 +90,19 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
         public static void Start(bool startGatewayWithControl)
         {
+            UnityMcpGatewaySettings settings = UnityMcpGatewaySettings.Instance;
+            settings.EnsureDefaults();
+            if (!TryValidateHttpTopology(settings, out string topologyError))
+            {
+                Debug.LogError("[UnityMcpControl] Start failed: " + topologyError);
+                return;
+            }
+
             if (IsRunning)
             {
                 if (startGatewayWithControl && !UnityMcpGatewayHost.IsRunning)
                 {
-                    if (!UnityMcpGatewayHost.Start(UnityMcpGatewaySettings.Instance, out string gatewayError))
+                    if (!UnityMcpGatewayHost.Start(settings, out string gatewayError))
                     {
                         Debug.LogError("[UnityMcpControl] Gateway start failed: " + gatewayError);
                     }
@@ -134,7 +142,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 return;
             }
 
-            if (!UnityMcpGatewayHost.Start(UnityMcpGatewaySettings.Instance, out string gatewayStartError))
+            if (!UnityMcpGatewayHost.Start(settings, out string gatewayStartError))
             {
                 Debug.LogError("[UnityMcpControl] Gateway start failed: " + gatewayStartError);
                 StopInternal(stopGateway: false);
@@ -142,6 +150,34 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
 
             Debug.Log("[UnityMcpControl] Gateway started.");
+        }
+
+        private static bool TryValidateHttpTopology(UnityMcpGatewaySettings settings, out string error)
+        {
+            error = string.Empty;
+            if (settings.ControlTransport != ControlTransportKind.Http)
+            {
+                return true;
+            }
+
+            if (!Uri.TryCreate(settings.GatewayHttpUrl, UriKind.Absolute, out Uri gatewayUri) ||
+                !Uri.TryCreate(settings.ControlHttpUrl, UriKind.Absolute, out Uri controlUri))
+            {
+                return true;
+            }
+
+            if (!string.Equals(
+                    gatewayUri.GetLeftPart(UriPartial.Authority),
+                    controlUri.GetLeftPart(UriPartial.Authority),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            error =
+                "Gateway HTTP URL and Control HTTP URL cannot use the same host and port. " +
+                "Use the default Named Pipe control transport or configure different HTTP ports.";
+            return false;
         }
 
         public static void Stop()

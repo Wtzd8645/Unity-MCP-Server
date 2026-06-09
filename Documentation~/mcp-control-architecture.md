@@ -25,9 +25,13 @@ The gateway side is responsible for:
 
 ## Runtime endpoints and settings
 
-- Control HTTP endpoint: `POST /mcp/tool/call`
+- Default external MCP endpoint: `http://127.0.0.1:38100/mcp`
+- Default internal control transport: Named Pipe
+- Optional Control HTTP endpoint: `http://127.0.0.1:38110/` with `POST /mcp/tool/call`
 - Control pipe name: configured by `Control Pipe Name` and defaults to `unity-mcp-control`
-- Gateway streamable HTTP endpoint: defaults to `http://127.0.0.1:38110/mcp`
+
+Gateway and Control HTTP URLs cannot use the same host and port. Existing settings that
+used the old default Control HTTP URL at port `38100` are migrated to Named Pipe.
 
 Primary runtime settings come from:
 

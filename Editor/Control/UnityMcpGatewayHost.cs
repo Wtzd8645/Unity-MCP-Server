@@ -238,6 +238,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
             };
 
             startInfo.EnvironmentVariables["UNITY_MCP_ROOT"] = gatewayProjectDirectory;
+            startInfo.EnvironmentVariables["UNITY_MCP_STREAMABLE_HTTP_URL"] = settings.GatewayHttpUrl;
             startInfo.EnvironmentVariables["UNITY_MCP_CONTROL_TRANSPORT"] =
                 settings.ControlTransport == ControlTransportKind.Pipe ? "pipe" : "http";
             startInfo.EnvironmentVariables["UNITY_MCP_CONTROL_HTTP_URL"] = settings.ControlHttpUrl;

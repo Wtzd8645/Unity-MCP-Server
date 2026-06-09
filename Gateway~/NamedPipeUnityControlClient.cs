@@ -7,6 +7,7 @@ namespace Blanketmen.UnityMcp.Gateway;
 
 public sealed class NamedPipeUnityControlClient : IUnityControlClient
 {
+    private const int ResponseGraceMs = 1000;
     private readonly string _pipeName;
     private readonly int _timeoutMs;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -25,7 +26,7 @@ public sealed class NamedPipeUnityControlClient : IUnityControlClient
     {
         int timeoutMs = timeoutMsOverride ?? _timeoutMs;
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(timeoutMs);
+        timeoutCts.CancelAfter(timeoutMs + ResponseGraceMs);
 
         var request = new UnityControlToolCallRequest
         {

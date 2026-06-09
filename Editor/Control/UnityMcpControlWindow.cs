@@ -25,6 +25,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         {
             public string dotnetExecutable;
             public string gatewayProjectPath;
+            public string gatewayHttpUrl;
             public string enabledModules;
             public ControlTransportKind controlTransport;
             public string controlHttpUrl;
@@ -187,6 +188,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 {
                     settings.DotnetExecutable = draft.dotnetExecutable;
                     settings.GatewayProjectPath = draft.gatewayProjectPath;
+                    settings.GatewayHttpUrl = draft.gatewayHttpUrl;
                     settings.EnabledModules = draft.enabledModules;
                     settings.ControlTransport = draft.controlTransport;
                     settings.ControlHttpUrl = draft.controlHttpUrl;
@@ -216,6 +218,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
             {
                 dotnetExecutable = settings.DotnetExecutable,
                 gatewayProjectPath = settings.GatewayProjectPath,
+                gatewayHttpUrl = settings.GatewayHttpUrl,
                 enabledModules = settings.EnabledModules,
                 controlTransport = settings.ControlTransport,
                 controlHttpUrl = settings.ControlHttpUrl,
@@ -235,6 +238,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
             {
                 draft.dotnetExecutable = EditorGUILayout.TextField("Dotnet Executable", draft.dotnetExecutable);
                 draft.gatewayProjectPath = EditorGUILayout.TextField("Gateway Project Path", draft.gatewayProjectPath);
+                draft.gatewayHttpUrl = EditorGUILayout.TextField("Gateway HTTP URL", draft.gatewayHttpUrl);
                 draft.startupProbeTimeoutMs = EditorGUILayout.IntField("Startup Probe Timeout (ms)", draft.startupProbeTimeoutMs);
             });
         }
