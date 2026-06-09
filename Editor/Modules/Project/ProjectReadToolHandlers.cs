@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEngine;
 using Blanketmen.UnityMcp.Editor.Control;
 
@@ -97,7 +98,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             BuildTargetGroup activeBuildTargetGroup = BuildPipeline.GetBuildTargetGroup(activeBuildTarget);
             string applicationIdentifier = activeBuildTargetGroup == BuildTargetGroup.Unknown
                 ? null
-                : PlayerSettings.GetApplicationIdentifier(activeBuildTargetGroup);
+                : PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.FromBuildTargetGroup(activeBuildTargetGroup));
 
             var payload = new ProjectPlayerSettingsResult
             {
@@ -120,7 +121,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             var payload = new ProjectSettingsResult
             {
                 serializationMode = EditorSettings.serializationMode.ToString(),
-                externalVersionControl = EditorSettings.externalVersionControl,
+                externalVersionControl = VersionControlSettings.mode,
                 enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled,
                 enterPlayModeOptions = EditorSettings.enterPlayModeOptions.ToString(),
             };

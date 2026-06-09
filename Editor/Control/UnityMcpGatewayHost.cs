@@ -513,7 +513,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 LastError = string.Empty;
                 State = GatewayProcessState.Running;
                 PersistManagedIdentity();
-                BeginLogForwarding(process);
+                // Reattached Process handles cannot recover the redirected streams created before domain reload.
                 return true;
             }
             catch
