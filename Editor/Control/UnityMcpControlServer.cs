@@ -30,7 +30,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         private static Thread httpThread;
         private static Thread pipeThread;
         private static bool autoStartChecked;
-        private static bool isRunning;
+        private static volatile bool isRunning;
 
         public static event Action StatusChanged;
 
@@ -515,9 +515,11 @@ namespace Blanketmen.UnityMcp.Editor.Control
             {
                 while (IsRunning)
                 {
+                    bool clientConnected = false;
                     try
                     {
                         server.WaitForConnection();
+                        clientConnected = true;
                         if (!IsRunning)
                         {
                             break;
@@ -565,7 +567,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                     }
                     catch (Exception ex)
                     {
-                        if (IsRunning)
+                        if (IsRunning && !(clientConnected && ex is IOException))
                         {
                             Debug.LogWarning("[UnityMcpControl] Pipe loop failed: " + ex.Message);
                         }
