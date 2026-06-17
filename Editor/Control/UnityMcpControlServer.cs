@@ -28,7 +28,9 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
         private static HttpListener httpListener;
         private static Thread httpThread;
+        private static HttpServerState httpServerState;
         private static Thread pipeThread;
+        private static PipeServerState pipeServerState;
         private static bool autoStartChecked;
         private static volatile bool isRunning;
 
@@ -269,13 +271,17 @@ namespace Blanketmen.UnityMcp.Editor.Control
         private static bool StartHttpServer(out string error)
         {
             error = string.Empty;
+            HttpListener listener = null;
             try
             {
-                httpListener = new HttpListener();
-                httpListener.Prefixes.Add(httpPrefix);
-                httpListener.Start();
+                listener = new HttpListener();
+                listener.Prefixes.Add(httpPrefix);
+                listener.Start();
 
-                httpThread = new Thread(HttpServerLoop)
+                var serverState = new HttpServerState(listener);
+                httpListener = listener;
+                httpServerState = serverState;
+                httpThread = new Thread(() => HttpServerLoop(serverState))
                 {
                     IsBackground = true,
                     Name = "UnityMcpControl.Http",
@@ -288,8 +294,10 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 error = "HTTP start failed: " + ex.Message;
                 try
                 {
+                    listener?.Close();
                     httpListener?.Close();
                     httpListener = null;
+                    httpServerState = null;
                 }
                 catch
                 {
@@ -304,12 +312,36 @@ namespace Blanketmen.UnityMcp.Editor.Control
         {
             try
             {
-                if (httpListener != null)
+                HttpServerState serverState = httpServerState;
+                if (serverState != null)
+                {
+                    serverState.StopRequested = true;
+                    serverState.CloseListener();
+                }
+
+                if (serverState == null && httpListener != null)
                 {
                     httpListener.Stop();
                     httpListener.Close();
-                    httpListener = null;
                 }
+
+                httpListener = null;
+
+                Thread thread = httpThread;
+                if (thread != null && thread.IsAlive)
+                {
+                    try
+                    {
+                        thread.Join(200);
+                    }
+                    catch
+                    {
+                        // Best effort only.
+                    }
+                }
+
+                httpThread = null;
+                httpServerState = null;
             }
             catch (Exception ex)
             {
@@ -317,14 +349,15 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
         }
 
-        private static void HttpServerLoop()
+        private static void HttpServerLoop(HttpServerState serverState)
         {
-            while (IsRunning && httpListener != null && httpListener.IsListening)
+            HttpListener listener = serverState.Listener;
+            while (!serverState.StopRequested && listener.IsListening)
             {
                 HttpListenerContext context = null;
                 try
                 {
-                    context = httpListener.GetContext();
+                    context = listener.GetContext();
                 }
                 catch (HttpListenerException)
                 {
@@ -336,7 +369,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 }
                 catch (Exception ex)
                 {
-                    if (IsRunning)
+                    if (!serverState.StopRequested)
                     {
                         Debug.LogWarning("[UnityMcpControl] HTTP accept failed: " + ex.Message);
                     }
@@ -418,7 +451,10 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[UnityMcpControl] HTTP response write failed: " + ex.Message);
+                if (!(ex is IOException) && !(ex is ObjectDisposedException))
+                {
+                    Debug.LogWarning("[UnityMcpControl] HTTP response write failed: " + ex.Message);
+                }
             }
         }
 
@@ -426,9 +462,11 @@ namespace Blanketmen.UnityMcp.Editor.Control
         {
             error = string.Empty;
             var startupProbe = new PipeStartupProbe();
+            var serverState = new PipeServerState(pipeName);
             try
             {
-                pipeThread = new Thread(() => PipeServerLoop(startupProbe))
+                pipeServerState = serverState;
+                pipeThread = new Thread(() => PipeServerLoop(serverState, startupProbe))
                 {
                     IsBackground = true,
                     Name = "UnityMcpControl.Pipe",
@@ -437,6 +475,8 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
             catch (Exception ex)
             {
+                pipeServerState = null;
+                pipeThread = null;
                 error = "Pipe start failed: " + ex.Message;
                 return false;
             }
@@ -466,15 +506,24 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
         private static void StopPipeServer()
         {
+            PipeServerState serverState = pipeServerState;
+            if (serverState != null)
+            {
+                serverState.StopRequested = true;
+            }
+
             try
             {
-                using var breaker = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+                string breakerPipeName = serverState != null ? serverState.PipeName : pipeName;
+                using var breaker = new NamedPipeClientStream(".", breakerPipeName, PipeDirection.Out);
                 breaker.Connect(100);
             }
             catch
             {
                 // Best effort: only used to unblock WaitForConnection.
             }
+
+            serverState?.DisposeActiveServer();
 
             Thread thread = pipeThread;
             if (thread != null && thread.IsAlive)
@@ -490,100 +539,112 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
 
             pipeThread = null;
+            pipeServerState = null;
         }
 
-        private static void PipeServerLoop(PipeStartupProbe startupProbe)
+        private static void PipeServerLoop(PipeServerState serverState, PipeStartupProbe startupProbe)
         {
-            NamedPipeServerStream server;
-            try
+            while (!serverState.StopRequested)
             {
-                server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1);
-                startupProbe.Succeeded = true;
-                startupProbe.Error = string.Empty;
-                startupProbe.Completed = true;
-            }
-            catch (Exception ex)
-            {
-                startupProbe.Succeeded = false;
-                startupProbe.Error = "Pipe server create failed: " + ex.Message;
-                startupProbe.Completed = true;
-                Debug.LogWarning("[UnityMcpControl] " + startupProbe.Error);
-                return;
-            }
-
-            try
-            {
-                while (IsRunning)
+                NamedPipeServerStream server;
+                try
                 {
-                    bool clientConnected = false;
-                    try
+                    server = new NamedPipeServerStream(serverState.PipeName, PipeDirection.InOut, 1);
+                    if (!serverState.TrySetActiveServer(server))
                     {
-                        server.WaitForConnection();
-                        clientConnected = true;
-                        if (!IsRunning)
-                        {
-                            break;
-                        }
+                        server.Dispose();
+                        break;
+                    }
 
-                        ControlToolCallResponse response;
-                        using (var reader = new StreamReader(server, Encoding.UTF8, false, 1024, true))
-                        using (var writer = new StreamWriter(server, new UTF8Encoding(false), 1024, true))
+                    if (!startupProbe.Completed)
+                    {
+                        startupProbe.Succeeded = true;
+                        startupProbe.Error = string.Empty;
+                        startupProbe.Completed = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!startupProbe.Completed)
+                    {
+                        startupProbe.Succeeded = false;
+                        startupProbe.Error = "Pipe server create failed: " + ex.Message;
+                        startupProbe.Completed = true;
+                        Debug.LogWarning("[UnityMcpControl] " + startupProbe.Error);
+                        return;
+                    }
+
+                    if (!serverState.StopRequested)
+                    {
+                        Debug.LogWarning("[UnityMcpControl] Pipe server recreate failed: " + ex.Message);
+                        Thread.Sleep(200);
+                    }
+
+                    continue;
+                }
+
+                try
+                {
+                    server.WaitForConnection();
+                    if (serverState.StopRequested)
+                    {
+                        break;
+                    }
+
+                    ControlToolCallResponse response;
+                    using (var reader = new StreamReader(server, Encoding.UTF8, false, 1024, true))
+                    using (var writer = new StreamWriter(server, new UTF8Encoding(false), 1024, true))
+                    {
+                        writer.AutoFlush = true;
+                        string line = reader.ReadLine();
+                        if (string.IsNullOrEmpty(line))
                         {
-                            writer.AutoFlush = true;
-                            string line = reader.ReadLine();
-                            if (string.IsNullOrEmpty(line))
+                            response = ControlResponses.Error("Empty pipe request.", "invalid_request", null);
+                        }
+                        else
+                        {
+                            ControlToolCallRequest request = null;
+                            try
                             {
-                                response = ControlResponses.Error("Empty pipe request.", "invalid_request", null);
+                                request = JsonUtility.FromJson<ControlToolCallRequest>(line);
+                            }
+                            catch (Exception ex)
+                            {
+                                response = ControlResponses.Error("Invalid JSON: " + ex.Message, "invalid_json", null);
+                                writer.WriteLine(JsonUtility.ToJson(response));
+                                continue;
+                            }
+
+                            if (request == null || string.IsNullOrEmpty(request.name))
+                            {
+                                response = ControlResponses.Error("Missing request.name.", "invalid_request", null);
                             }
                             else
                             {
-                                ControlToolCallRequest request = null;
-                                try
-                                {
-                                    request = JsonUtility.FromJson<ControlToolCallRequest>(line);
-                                }
-                                catch (Exception ex)
-                                {
-                                    response = ControlResponses.Error("Invalid JSON: " + ex.Message, "invalid_json", null);
-                                    writer.WriteLine(JsonUtility.ToJson(response));
-                                    server.Disconnect();
-                                    continue;
-                                }
-
-                                if (request == null || string.IsNullOrEmpty(request.name))
-                                {
-                                    response = ControlResponses.Error("Missing request.name.", "invalid_request", null);
-                                }
-                                else
-                                {
-                                    response = ExecuteOnMainThreadWithTimeout(request, MainThreadTimeoutMs);
-                                }
+                                response = ExecuteOnMainThreadWithTimeout(request, MainThreadTimeoutMs);
                             }
-
-                            writer.WriteLine(JsonUtility.ToJson(response));
                         }
 
-                        server.Disconnect();
-                    }
-                    catch (Exception ex)
-                    {
-                        if (IsRunning && !(clientConnected && ex is IOException))
-                        {
-                            Debug.LogWarning("[UnityMcpControl] Pipe loop failed: " + ex.Message);
-                        }
-
-                        if (server.IsConnected)
-                        {
-                            try { server.Disconnect(); } catch { }
-                        }
-
-                        Thread.Sleep(200);
+                        writer.WriteLine(JsonUtility.ToJson(response));
                     }
                 }
-            }
-            finally
-            {
-                server.Dispose();
+                catch (IOException)
+                {
+                    // Clients may disconnect at any point. Recreate the server stream for the next request.
+                }
+                catch (Exception ex)
+                {
+                    if (!serverState.StopRequested)
+                    {
+                        Debug.LogWarning("[UnityMcpControl] Pipe loop failed: " + ex.Message);
+                    }
+                }
+                finally
+                {
+                    serverState.ClearActiveServer(server);
+                    try { if (server.IsConnected) server.Disconnect(); } catch { }
+                    try { server.Dispose(); } catch { }
+                }
             }
         }
 
@@ -622,11 +683,24 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
             ControlToolCallResponse response = null;
             Exception error = null;
+            int shouldRun = 1;
 
             using (var done = new ManualResetEvent(false))
             {
                 MainThreadActions.Enqueue(() =>
                 {
+                    if (Interlocked.CompareExchange(ref shouldRun, 1, 1) == 0)
+                    {
+                        return;
+                    }
+
+                    if (!IsRunning)
+                    {
+                        error = new InvalidOperationException("Control stopped before main-thread execution.");
+                        done.Set();
+                        return;
+                    }
+
                     try
                     {
                         response = ExecuteTool(request);
@@ -643,6 +717,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
                 if (!done.WaitOne(timeoutMs))
                 {
+                    Interlocked.Exchange(ref shouldRun, 0);
                     return ControlResponses.Error("Main-thread execution timed out.", "tool_timeout", request.name);
                 }
             }
@@ -675,6 +750,71 @@ namespace Blanketmen.UnityMcp.Editor.Control
             public volatile bool Completed;
             public bool Succeeded;
             public string Error = string.Empty;
+        }
+
+        private sealed class HttpServerState
+        {
+            public readonly HttpListener Listener;
+            public volatile bool StopRequested;
+
+            public HttpServerState(HttpListener listener)
+            {
+                Listener = listener;
+            }
+
+            public void CloseListener()
+            {
+                try { Listener.Stop(); } catch { }
+                try { Listener.Close(); } catch { }
+            }
+        }
+
+        private sealed class PipeServerState
+        {
+            private readonly object serverLock = new object();
+            private NamedPipeServerStream activeServer;
+
+            public readonly string PipeName;
+            public volatile bool StopRequested;
+
+            public PipeServerState(string pipeName)
+            {
+                PipeName = pipeName;
+            }
+
+            public bool TrySetActiveServer(NamedPipeServerStream server)
+            {
+                lock (serverLock)
+                {
+                    if (StopRequested)
+                    {
+                        return false;
+                    }
+
+                    activeServer = server;
+                    return true;
+                }
+            }
+
+            public void ClearActiveServer(NamedPipeServerStream server)
+            {
+                lock (serverLock)
+                {
+                    if (ReferenceEquals(activeServer, server))
+                    {
+                        activeServer = null;
+                    }
+                }
+            }
+
+            public void DisposeActiveServer()
+            {
+                lock (serverLock)
+                {
+                    try { activeServer?.Dispose(); } catch { }
+                    activeServer = null;
+                }
+            }
         }
 
         private static ControlTransportKind ResolveTransport()
@@ -727,10 +867,23 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
 
             Exception actionError = null;
+            int shouldRun = 1;
             using (var done = new ManualResetEvent(false))
             {
                 MainThreadActions.Enqueue(() =>
                 {
+                    if (Interlocked.CompareExchange(ref shouldRun, 1, 1) == 0)
+                    {
+                        return;
+                    }
+
+                    if (!IsRunning)
+                    {
+                        actionError = new InvalidOperationException("Control stopped before main-thread execution.");
+                        done.Set();
+                        return;
+                    }
+
                     try
                     {
                         action();
@@ -747,6 +900,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
                 if (!done.WaitOne(timeoutMs))
                 {
+                    Interlocked.Exchange(ref shouldRun, 0);
                     error = "Main-thread action timed out.";
                     return false;
                 }

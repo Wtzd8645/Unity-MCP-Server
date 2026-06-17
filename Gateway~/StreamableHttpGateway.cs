@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.IO;
 
 namespace Blanketmen.UnityMcp.Gateway;
 
@@ -57,10 +58,10 @@ public sealed class StreamableHttpGateway : IDisposable
     public async Task RunAsync(TextWriter log, CancellationToken cancellationToken)
     {
         _listener.Start();
-        await log.WriteLineAsync(
+        await TryWriteLogAsync(
+            log,
             $"[{DateTimeOffset.UtcNow:O}] streamable-http listening on {_listenerPrefix} " +
             $"(endpoint: {_endpointPath})");
-        await log.FlushAsync();
 
         using var registration = cancellationToken.Register(() =>
         {
@@ -112,20 +113,37 @@ public sealed class StreamableHttpGateway : IDisposable
         {
             context.Response.Abort();
         }
+        catch (IOException)
+        {
+            context.Response.Abort();
+        }
+        catch (HttpListenerException)
+        {
+            context.Response.Abort();
+        }
+        catch (ObjectDisposedException)
+        {
+            context.Response.Abort();
+        }
         catch (Exception ex)
         {
-            await log.WriteLineAsync($"[{DateTimeOffset.UtcNow:O}] HTTP handler error: {ex}");
-            await log.FlushAsync();
+            await TryWriteLogAsync(log, $"[{DateTimeOffset.UtcNow:O}] HTTP handler error: {ex}");
 
-            if (context.Response.OutputStream.CanWrite)
+            try
             {
+                if (!context.Response.OutputStream.CanWrite)
+                {
+                    context.Response.Abort();
+                    return;
+                }
+
                 JsonObject error = McpServer.CreateErrorEnvelope(
                     id: null,
                     code: -32603,
                     message: "Internal error");
                 await WriteJsonAsync(context.Response, statusCode: 500, error, cancellationToken);
             }
-            else
+            catch
             {
                 context.Response.Abort();
             }
@@ -374,5 +392,18 @@ public sealed class StreamableHttpGateway : IDisposable
         }
 
         return trimmed.TrimEnd('/');
+    }
+
+    private static async Task TryWriteLogAsync(TextWriter log, string message)
+    {
+        try
+        {
+            await log.WriteLineAsync(message);
+            await log.FlushAsync();
+        }
+        catch
+        {
+            // Logging is best effort; request handling should survive detached or closed streams.
+        }
     }
 }

@@ -37,7 +37,12 @@ public sealed class StdioJsonRpcTransport
             }
 
             JsonNode? parsed = JsonNode.Parse(line);
-            return parsed as JsonObject;
+            if (parsed is JsonObject message)
+            {
+                return message;
+            }
+
+            throw new JsonException("JSON-RPC message must be a JSON object.");
         }
     }
 
@@ -89,6 +94,5 @@ public sealed class StdioJsonRpcTransport
         await _output.FlushAsync(cancellationToken);
     }
 }
-
 
 

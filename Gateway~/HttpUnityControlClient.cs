@@ -39,14 +39,50 @@ public sealed class HttpUnityControlClient : IUnityControlClient
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter((timeoutMsOverride ?? timeoutMs) + ResponseGraceMs);
 
-        HttpResponseMessage response;
         try
         {
-            response = await httpClient.PostAsJsonAsync(
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
                 "mcp/tool/call",
                 request,
                 JsonOptions,
                 timeoutCts.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ControlToolCallResult(
+                    IsError: true,
+                    ContentText: $"Control HTTP status {(int)response.StatusCode} ({response.StatusCode}).",
+                    StructuredContent: new JsonObject
+                    {
+                        ["status"] = "control_http_error",
+                        ["transport"] = "http",
+                        ["statusCode"] = (int)response.StatusCode,
+                    });
+            }
+
+            UnityControlToolCallResponse? controlResponse =
+                await response.Content.ReadFromJsonAsync<UnityControlToolCallResponse>(
+                    JsonOptions,
+                    timeoutCts.Token);
+
+            if (controlResponse is null)
+            {
+                return new ControlToolCallResult(
+                    IsError: true,
+                    ContentText: "Control returned empty response.",
+                    StructuredContent: new JsonObject
+                    {
+                        ["status"] = "control_invalid_response",
+                        ["transport"] = "http",
+                    });
+            }
+
+            return new ControlToolCallResult(
+                IsError: controlResponse.IsError,
+                ContentText: string.IsNullOrWhiteSpace(controlResponse.ContentText)
+                    ? $"Tool '{toolName}' completed."
+                    : controlResponse.ContentText,
+                StructuredContent: ParseStructuredContent(controlResponse.StructuredContentJson));
         }
         catch (Exception ex)
         {
@@ -59,43 +95,6 @@ public sealed class HttpUnityControlClient : IUnityControlClient
                     ["transport"] = "http",
                 });
         }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return new ControlToolCallResult(
-                IsError: true,
-                ContentText: $"Control HTTP status {(int)response.StatusCode} ({response.StatusCode}).",
-                StructuredContent: new JsonObject
-                {
-                    ["status"] = "control_http_error",
-                    ["transport"] = "http",
-                    ["statusCode"] = (int)response.StatusCode,
-                });
-        }
-
-        UnityControlToolCallResponse? controlResponse =
-            await response.Content.ReadFromJsonAsync<UnityControlToolCallResponse>(
-                JsonOptions,
-                timeoutCts.Token);
-
-        if (controlResponse is null)
-        {
-            return new ControlToolCallResult(
-                IsError: true,
-                ContentText: "Control returned empty response.",
-                StructuredContent: new JsonObject
-                {
-                    ["status"] = "control_invalid_response",
-                    ["transport"] = "http",
-                });
-        }
-
-        return new ControlToolCallResult(
-            IsError: controlResponse.IsError,
-            ContentText: string.IsNullOrWhiteSpace(controlResponse.ContentText)
-                ? $"Tool '{toolName}' completed."
-                : controlResponse.ContentText,
-            StructuredContent: ParseStructuredContent(controlResponse.StructuredContentJson));
     }
 
     private static JsonNode? ParseStructuredContent(string? rawJson)
@@ -123,5 +122,3 @@ public sealed class UnityControlToolCallResponse
     public string? ContentText { get; set; }
     public string? StructuredContentJson { get; set; }
 }
-
-

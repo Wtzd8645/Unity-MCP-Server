@@ -34,14 +34,26 @@ public sealed class McpServer
         CancellationToken cancellationToken)
     {
         var transport = new StdioJsonRpcTransport(stdin, stdout);
-        await log.WriteLineAsync(
+        await TryWriteLogAsync(
+            log,
             $"[{DateTimeOffset.UtcNow:O}] {ServerName} starting. " +
             $"Enabled modules: {string.Join(", ", _toolRegistry.EnabledModules)}");
-        await log.FlushAsync();
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            JsonObject? message = await transport.ReadMessageAsync(cancellationToken);
+            JsonObject? message;
+            try
+            {
+                message = await transport.ReadMessageAsync(cancellationToken);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                await transport.WriteMessageAsync(
+                    CreateErrorEnvelope(id: null, code: -32700, message: "Parse error"),
+                    cancellationToken);
+                continue;
+            }
+
             if (message is null)
             {
                 break;
@@ -60,7 +72,7 @@ public sealed class McpServer
         TextWriter log,
         CancellationToken cancellationToken)
     {
-        string? method = request["method"]?.GetValue<string>();
+        string? method = TryGetString(request["method"]);
         bool hasId = request.TryGetPropertyValue("id", out JsonNode? rawId);
         JsonNode? id = hasId ? rawId?.DeepClone() : null;
         bool isNotification = !hasId;
@@ -114,8 +126,7 @@ public sealed class McpServer
         }
         catch (Exception ex)
         {
-            await log.WriteLineAsync($"[{DateTimeOffset.UtcNow:O}] Unhandled error: {ex}");
-            await log.FlushAsync();
+            await TryWriteLogAsync(log, $"[{DateTimeOffset.UtcNow:O}] Unhandled error: {ex}");
             return CreateErrorEnvelope(id, -32603, "Internal error");
         }
     }
@@ -203,7 +214,7 @@ public sealed class McpServer
             throw JsonRpcException.InvalidParams("tools/call requires object params.");
         }
 
-        string? toolName = parameters["name"]?.GetValue<string>();
+        string? toolName = TryGetString(parameters["name"]);
         if (string.IsNullOrWhiteSpace(toolName))
         {
             throw JsonRpcException.InvalidParams("tools/call params.name is required.");
@@ -323,9 +334,30 @@ public sealed class McpServer
 
         return timeoutMs;
     }
+
+    private static string? TryGetString(JsonNode? node)
+    {
+        if (node is JsonValue value && value.TryGetValue<string>(out string? result))
+        {
+            return result;
+        }
+
+        return null;
+    }
+
+    private static async Task TryWriteLogAsync(TextWriter log, string message)
+    {
+        try
+        {
+            await log.WriteLineAsync(message);
+            await log.FlushAsync();
+        }
+        catch
+        {
+            // Logging must not break protocol handling after Unity domain reload detaches streams.
+        }
+    }
 }
-
-
 
 
 
