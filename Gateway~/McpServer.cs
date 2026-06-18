@@ -232,6 +232,8 @@ public sealed class McpServer
                 $"Invalid arguments for '{tool.Name}': {validationError}");
         }
 
+        EnsureInternalRunTestsId(tool.Name, arguments);
+
         int? timeoutOverride = ResolveControlTimeoutOverride(tool.Name, arguments);
         ControlToolCallResult controlResult = await _controlClient.CallToolAsync(
             tool.Name,
@@ -276,6 +278,20 @@ public sealed class McpServer
             .ToArray();
 
         return modules.Length == 0 ? null : modules;
+    }
+
+    private static void EnsureInternalRunTestsId(string toolName, JsonObject arguments)
+    {
+        if (!string.Equals(toolName, "unity_project_run_tests", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        string? runId = TryGetString(arguments["runId"]);
+        if (string.IsNullOrWhiteSpace(runId))
+        {
+            arguments["runId"] = Guid.NewGuid().ToString("N");
+        }
     }
 
     private static int? ResolveControlTimeoutOverride(string toolName, JsonObject arguments)
@@ -358,7 +374,6 @@ public sealed class McpServer
         }
     }
 }
-
 
 
 

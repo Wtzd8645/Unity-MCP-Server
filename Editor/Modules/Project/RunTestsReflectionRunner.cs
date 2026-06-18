@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using UnityEditor;
 using UnityEngine;
 using Blanketmen.UnityMcp.Editor.Control;
 
@@ -19,6 +20,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
         private const string ExecutionSettingsTypeName = "UnityEditor.TestTools.TestRunner.Api.ExecutionSettings";
         private const string FilterTypeName = "UnityEditor.TestTools.TestRunner.Api.Filter";
         private const string TestModeTypeName = "UnityEditor.TestTools.TestRunner.Api.TestMode";
+        private static readonly object RecoveryLock = new object();
+        private static readonly Dictionary<string, RecoveryWatcher> RecoveryWatchers = new Dictionary<string, RecoveryWatcher>(StringComparer.Ordinal);
 
         public static bool TryRun(
             RunTestsArgs args,
@@ -31,6 +34,9 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             errorStatus = null;
             errorMessage = null;
 
+            EnsureRunId(args);
+            string requestedMode = NormalizeMode(args.mode);
+
             Type apiType = FindType(TestRunnerApiTypeName);
             Type settingsType = FindType(ExecutionSettingsTypeName);
             Type filterType = FindType(FilterTypeName);
@@ -40,10 +46,12 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             {
                 errorStatus = "unsupported";
                 errorMessage = "Unity Test Framework API not found. Ensure com.unity.test-framework is installed.";
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
-            string requestedMode = NormalizeMode(args.mode);
+            TestRunStore.Begin(args, requestedMode);
+
             object api = null;
             object settings = null;
             object filter = null;
@@ -61,6 +69,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             {
                 errorStatus = "tool_exception";
                 errorMessage = "Failed to initialize test runner: " + setupError;
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
@@ -68,6 +77,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             {
                 errorStatus = "tool_exception";
                 errorMessage = "Failed to initialize test runner objects.";
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
@@ -77,6 +87,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 observer.TryDetach(mainThreadInvoker, api, apiType);
                 errorStatus = "unsupported";
                 errorMessage = "TestRunnerApi.Execute method not found.";
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
@@ -89,6 +100,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 observer.TryDetach(mainThreadInvoker, api, apiType);
                 errorStatus = "tool_exception";
                 errorMessage = "Failed to start test run: " + executeError;
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
@@ -99,6 +111,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 observer.TryDetach(mainThreadInvoker, api, apiType);
                 errorStatus = "tool_timeout";
                 errorMessage = "Test run timed out after " + timeoutMs + " ms.";
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
@@ -107,20 +120,60 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             {
                 errorStatus = "tool_exception";
                 errorMessage = observer.RunError;
+                TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
             var summary = observer.BuildSummary();
             result = new RunTestsResult
             {
-                runId = Guid.NewGuid().ToString("N"),
+                runId = args.runId,
                 mode = requestedMode,
                 summary = summary,
                 results = observer.Results.ToArray(),
             };
-            result.artifacts = BuildArtifacts(args.includeXmlReportPath, result);
+            result.artifacts = BuildArtifacts(args.includeXmlReportPath, result, isRecovered: false);
+            TestRunStore.MarkCompleted(result, isRecovered: false);
 
             return true;
+        }
+
+        public static ControlToolCallResponse HandleGetTestRunState(
+            ControlToolCallRequest request,
+            MainThreadActionInvoker mainThreadInvoker)
+        {
+            TestRunStateQueryArgs args = ControlJson.ParseArgs(
+                request.argumentsJson,
+                new TestRunStateQueryArgs());
+
+            if (string.IsNullOrWhiteSpace(args.runId))
+            {
+                return ControlResponses.Error("runId is required.", "invalid_argument", request.name);
+            }
+
+            string runId = TestRunStore.NormalizeRunId(args.runId);
+
+            TestRunState state;
+            if (!TestRunStore.TryLoad(runId, out state))
+            {
+                return ControlResponses.Success(
+                    "Test run state not found.",
+                    new TestRunStateQueryResult
+                    {
+                        status = "unknown",
+                        runId = runId,
+                        statePath = TestRunStore.GetStatePath(runId),
+                        xmlReportPath = TestRunStore.GetXmlReportPath(runId),
+                    });
+            }
+
+            if (string.Equals(state.status, "running", StringComparison.Ordinal))
+            {
+                EnsureRecoveryWatcher(state, mainThreadInvoker);
+                TestRunStore.TryLoad(runId, out state);
+            }
+
+            return ControlResponses.Success("Test run state loaded.", TestRunStore.ToQueryResult(state));
         }
 
         private static string NormalizeMode(string raw)
@@ -133,29 +186,46 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             return "EditMode";
         }
 
-        private static RunTestsArtifacts BuildArtifacts(bool includeXmlReportPath, RunTestsResult result)
+        private static void EnsureRunId(RunTestsArgs args)
+        {
+            if (args == null)
+            {
+                return;
+            }
+
+            args.runId = TestRunStore.NormalizeRunId(args.runId);
+        }
+
+        private static RunTestsArtifacts BuildArtifacts(bool includeXmlReportPath, RunTestsResult result, bool isRecovered)
         {
             if (!includeXmlReportPath)
             {
-                return null;
+                return new RunTestsArtifacts
+                {
+                    statePath = TestRunStore.GetStatePath(result.runId),
+                    isRecovered = isRecovered,
+                };
             }
 
-            string root = ControlUtil.GetProjectRootPath();
-            string reportsDir = Path.Combine(root, "Library", "McpReports");
-            string xmlPath = Path.Combine(reportsDir, "latest-test-results.xml");
+            string reportsDir = TestRunStore.GetReportsRoot();
+            string xmlPath = TestRunStore.GetXmlReportPath(result.runId);
+            string latestXmlPath = Path.Combine(reportsDir, "latest-test-results.xml");
             try
             {
                 Directory.CreateDirectory(reportsDir);
+                Directory.CreateDirectory(Path.GetDirectoryName(xmlPath));
                 File.WriteAllText(xmlPath, BuildXmlReport(result));
+                File.WriteAllText(latestXmlPath, BuildXmlReport(result));
             }
             catch
             {
-                return null;
             }
 
             return new RunTestsArtifacts
             {
                 xmlReportPath = xmlPath,
+                statePath = TestRunStore.GetStatePath(result.runId),
+                isRecovered = isRecovered,
             };
         }
 
@@ -469,10 +539,334 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             throw new InvalidOperationException("Unable to create callback delegate for " + methodName + ".");
         }
 
+        private static void EnsureRecoveryWatcher(TestRunState state, MainThreadActionInvoker mainThreadInvoker)
+        {
+            if (state == null || string.IsNullOrEmpty(state.runId) || mainThreadInvoker == null)
+            {
+                return;
+            }
+
+            lock (RecoveryLock)
+            {
+                if (RecoveryWatchers.ContainsKey(state.runId))
+                {
+                    return;
+                }
+            }
+
+            RunTestsArgs args = ControlJson.ParseArgs(state.argumentsJson, new RunTestsArgs());
+            EnsureRunId(args);
+            if (!string.Equals(args.runId, state.runId, StringComparison.Ordinal))
+            {
+                args.runId = state.runId;
+            }
+
+            Type apiType = FindType(TestRunnerApiTypeName);
+            if (apiType == null)
+            {
+                TestRunStore.MarkFailed(state.runId, state.mode, "unsupported", "Unity Test Framework API not found during test run recovery.", args.includeXmlReportPath);
+                return;
+            }
+
+            object api = null;
+            TestRunObserver observer = null;
+            bool attached = mainThreadInvoker(
+                () =>
+                {
+                    api = CreateApiInstance(apiType);
+                    observer = new TestRunObserver(
+                        args.includePassed,
+                        finishedObserver => CompleteRecoveredRun(state.runId, state.mode, args.includeXmlReportPath, finishedObserver, api, apiType));
+                    observer.TryAttach(api, apiType);
+                },
+                15000,
+                out string attachError);
+
+            if (!attached || api == null || observer == null)
+            {
+                TestRunStore.MarkFailed(
+                    state.runId,
+                    state.mode,
+                    "test_run_recovery_failed",
+                    "Failed to attach test run recovery callbacks: " + attachError,
+                    args.includeXmlReportPath);
+                return;
+            }
+
+            lock (RecoveryLock)
+            {
+                if (!RecoveryWatchers.ContainsKey(state.runId))
+                {
+                    RecoveryWatchers[state.runId] = new RecoveryWatcher
+                    {
+                        RunId = state.runId,
+                        Api = api,
+                        ApiType = apiType,
+                        Observer = observer,
+                    };
+                }
+            }
+        }
+
+        private static void CompleteRecoveredRun(
+            string runId,
+            string mode,
+            bool includeXmlReportPath,
+            TestRunObserver observer,
+            object api,
+            Type apiType)
+        {
+            try
+            {
+                if (observer.RunError != null)
+                {
+                    TestRunStore.MarkFailed(runId, mode, "tool_exception", observer.RunError, includeXmlReportPath);
+                    return;
+                }
+
+                var result = new RunTestsResult
+                {
+                    runId = runId,
+                    mode = mode,
+                    summary = observer.BuildSummary(),
+                    results = observer.Results.ToArray(),
+                };
+                result.artifacts = BuildArtifacts(includeXmlReportPath, result, isRecovered: true);
+                TestRunStore.MarkCompleted(result, isRecovered: true);
+            }
+            finally
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    try
+                    {
+                        observer.DetachDirect(api, apiType);
+                    }
+                    catch
+                    {
+                        // Best effort only during recovery cleanup.
+                    }
+                };
+
+                lock (RecoveryLock)
+                {
+                    RecoveryWatchers.Remove(runId);
+                }
+            }
+        }
+
+        [Serializable]
+        private sealed class TestRunState
+        {
+            public string status;
+            public string runId;
+            public string mode;
+            public string message;
+            public string errorStatus;
+            public string startedUtc;
+            public string completedUtc;
+            public string argumentsJson;
+            public string resultJson;
+            public string statePath;
+            public string xmlReportPath;
+            public bool isRecovered;
+        }
+
+        private sealed class RecoveryWatcher
+        {
+            public string RunId;
+            public object Api;
+            public Type ApiType;
+            public TestRunObserver Observer;
+        }
+
+        private static class TestRunStore
+        {
+            public static string NormalizeRunId(string runId)
+            {
+                if (string.IsNullOrWhiteSpace(runId))
+                {
+                    return Guid.NewGuid().ToString("N");
+                }
+
+                var builder = new StringBuilder(runId.Length);
+                for (int i = 0; i < runId.Length; i++)
+                {
+                    char ch = runId[i];
+                    if ((ch >= 'a' && ch <= 'z') ||
+                        (ch >= 'A' && ch <= 'Z') ||
+                        (ch >= '0' && ch <= '9') ||
+                        ch == '-' ||
+                        ch == '_')
+                    {
+                        builder.Append(ch);
+                    }
+                }
+
+                string normalized = builder.ToString();
+                return string.IsNullOrEmpty(normalized) ? Guid.NewGuid().ToString("N") : normalized;
+            }
+
+            public static void Begin(RunTestsArgs args, string mode)
+            {
+                var state = new TestRunState
+                {
+                    status = "running",
+                    runId = args.runId,
+                    mode = mode,
+                    message = "Test run started.",
+                    startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    argumentsJson = JsonUtility.ToJson(args),
+                    statePath = GetStatePath(args.runId),
+                    xmlReportPath = args.includeXmlReportPath ? GetXmlReportPath(args.runId) : null,
+                    isRecovered = false,
+                };
+
+                Save(state);
+            }
+
+            public static void MarkCompleted(RunTestsResult result, bool isRecovered)
+            {
+                if (result == null)
+                {
+                    return;
+                }
+
+                var state = LoadOrCreate(result.runId);
+                state.status = "completed";
+                state.mode = result.mode;
+                state.message = "Test run completed.";
+                state.completedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                state.resultJson = JsonUtility.ToJson(result);
+                state.statePath = GetStatePath(result.runId);
+                state.xmlReportPath = result.artifacts == null ? null : result.artifacts.xmlReportPath;
+                state.isRecovered = isRecovered;
+                Save(state);
+            }
+
+            public static void MarkFailed(string runId, string mode, string status, string message, bool includeXmlReportPath)
+            {
+                runId = NormalizeRunId(runId);
+                var state = LoadOrCreate(runId);
+                state.status = "failed";
+                state.mode = string.IsNullOrEmpty(mode) ? "Unknown" : mode;
+                state.errorStatus = string.IsNullOrEmpty(status) ? "tool_exception" : status;
+                state.message = message;
+                state.completedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                state.statePath = GetStatePath(runId);
+                state.xmlReportPath = includeXmlReportPath ? GetXmlReportPath(runId) : null;
+                Save(state);
+            }
+
+            public static bool TryLoad(string runId, out TestRunState state)
+            {
+                state = null;
+                string path = GetStatePath(runId);
+                if (!File.Exists(path))
+                {
+                    return false;
+                }
+
+                try
+                {
+                    state = JsonUtility.FromJson<TestRunState>(File.ReadAllText(path));
+                    if (state == null)
+                    {
+                        return false;
+                    }
+
+                    state.runId = NormalizeRunId(state.runId);
+                    state.statePath = path;
+                    if (string.IsNullOrEmpty(state.xmlReportPath))
+                    {
+                        state.xmlReportPath = GetXmlReportPath(state.runId);
+                    }
+
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            public static TestRunStateQueryResult ToQueryResult(TestRunState state)
+            {
+                if (state == null)
+                {
+                    return null;
+                }
+
+                return new TestRunStateQueryResult
+                {
+                    status = state.status,
+                    runId = state.runId,
+                    mode = state.mode,
+                    message = state.message,
+                    statePath = state.statePath,
+                    xmlReportPath = state.xmlReportPath,
+                    isRecovered = state.isRecovered,
+                    resultJson = state.resultJson,
+                };
+            }
+
+            public static string GetReportsRoot()
+            {
+                return Path.Combine(ControlUtil.GetProjectRootPath(), "Library", "McpReports");
+            }
+
+            public static string GetStatePath(string runId)
+            {
+                return Path.Combine(GetRunDirectory(runId), "state.json");
+            }
+
+            public static string GetXmlReportPath(string runId)
+            {
+                return Path.Combine(GetRunDirectory(runId), runId + ".xml");
+            }
+
+            private static string GetRunDirectory(string runId)
+            {
+                return Path.Combine(GetReportsRoot(), "test-runs", NormalizeRunId(runId));
+            }
+
+            private static TestRunState LoadOrCreate(string runId)
+            {
+                TestRunState state;
+                if (TryLoad(runId, out state))
+                {
+                    return state;
+                }
+
+                runId = NormalizeRunId(runId);
+                return new TestRunState
+                {
+                    runId = runId,
+                    statePath = GetStatePath(runId),
+                    xmlReportPath = GetXmlReportPath(runId),
+                    startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                };
+            }
+
+            private static void Save(TestRunState state)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(state.statePath));
+                    File.WriteAllText(state.statePath, JsonUtility.ToJson(state, true));
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("[UnityMcpControl] Failed to write test run state: " + ex.Message);
+                }
+            }
+        }
+
         private sealed class TestRunObserver
         {
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
             private readonly bool _includePassed;
+            private readonly Action<TestRunObserver> _finishedCallback;
             private readonly List<EventSubscription> _subscriptions = new List<EventSubscription>();
             private readonly object _sync = new object();
             private object _rootResult;
@@ -483,9 +877,10 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             public readonly List<RunTestCaseResult> Results = new List<RunTestCaseResult>();
             public string RunError { get; private set; }
 
-            public TestRunObserver(bool includePassed)
+            public TestRunObserver(bool includePassed, Action<TestRunObserver> finishedCallback = null)
             {
                 _includePassed = includePassed;
+                _finishedCallback = finishedCallback;
             }
 
             public void OnRunFinished(object runResult)
@@ -507,6 +902,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                         _finished.Set();
                     }
                 }
+
+                _finishedCallback?.Invoke(this);
             }
 
             public void OnRunStarted(object _)
@@ -595,28 +992,27 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     return;
                 }
 
-                invoker(
-                    () =>
-                    {
-                        if (_registeredCallback != null && _unregisterCallbacks != null)
-                        {
-                            MethodInfo unregister = _unregisterCallbacks.MakeGenericMethod(_registeredCallbackType);
-                            unregister.Invoke(api, new[] { _registeredCallback });
-                            _registeredCallback = null;
-                            _registeredCallbackType = null;
-                            _unregisterCallbacks = null;
-                        }
+                invoker(() => DetachDirect(api, apiType), 5000, out _);
+            }
 
-                        for (int i = 0; i < _subscriptions.Count; i++)
-                        {
-                            EventSubscription sub = _subscriptions[i];
-                            sub.EventInfo.RemoveEventHandler(sub.Target, sub.Delegate);
-                        }
+            public void DetachDirect(object api, Type apiType)
+            {
+                if (_registeredCallback != null && _unregisterCallbacks != null)
+                {
+                    MethodInfo unregister = _unregisterCallbacks.MakeGenericMethod(_registeredCallbackType);
+                    unregister.Invoke(api, new[] { _registeredCallback });
+                    _registeredCallback = null;
+                    _registeredCallbackType = null;
+                    _unregisterCallbacks = null;
+                }
 
-                        _subscriptions.Clear();
-                    },
-                    5000,
-                    out _);
+                for (int i = 0; i < _subscriptions.Count; i++)
+                {
+                    EventSubscription sub = _subscriptions[i];
+                    sub.EventInfo.RemoveEventHandler(sub.Target, sub.Delegate);
+                }
+
+                _subscriptions.Clear();
             }
 
             private bool TryRegisterCallbacks(object api, Type apiType)

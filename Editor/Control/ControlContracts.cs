@@ -1355,6 +1355,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
     [Serializable]
     internal class RunTestsArgs
     {
+        public string runId;
         public string mode = "EditMode";
         public RunTestsFilter filter;
         public int timeoutMs = 600000;
@@ -1408,6 +1409,27 @@ namespace Blanketmen.UnityMcp.Editor.Control
     internal class RunTestsArtifacts
     {
         public string xmlReportPath;
+        public string statePath;
+        public bool isRecovered;
+    }
+
+    [Serializable]
+    internal class TestRunStateQueryArgs
+    {
+        public string runId;
+    }
+
+    [Serializable]
+    internal class TestRunStateQueryResult
+    {
+        public string status;
+        public string runId;
+        public string mode;
+        public string message;
+        public string statePath;
+        public string xmlReportPath;
+        public bool isRecovered;
+        public string resultJson;
     }
 
     internal struct PaginationRange

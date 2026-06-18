@@ -12,6 +12,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         {
             return request.name switch
             {
+                "__unity_project_get_test_run_state" => RunTestsReflectionRunner.HandleGetTestRunState(request, mainThreadInvoker),
                 "unity_project_ping" => ProjectReadToolHandlers.HandlePing(controlVersion),
                 "unity_project_get_info" => ProjectReadToolHandlers.HandleProjectInfo(request),
                 "unity_project_get_build_settings" => ProjectReadToolHandlers.HandleProjectGetBuildSettings(request),
@@ -88,4 +89,3 @@ namespace Blanketmen.UnityMcp.Editor.Control
         }
     }
 }
-
