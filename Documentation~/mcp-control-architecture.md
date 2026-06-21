@@ -21,7 +21,7 @@ The gateway side is responsible for:
 - Loading tool schemas from `Gateway~/schemas/`
 - Enabling modules based on `UNITY_MCP_ENABLED_MODULES`
 - Validating tool input against the active schemas
-- Serving MCP over streamable HTTP or stdio
+- Serving MCP over streamable HTTP or stdio through the official MCP C# SDK
 
 ## Runtime endpoints and settings
 
