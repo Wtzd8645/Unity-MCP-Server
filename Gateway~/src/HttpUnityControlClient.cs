@@ -9,121 +9,112 @@ using System.Threading.Tasks;
 
 namespace Blanketmen.UnityMcp.Gateway
 {
-    public sealed class HttpUnityControlClient : IUnityControlClient
+    public sealed class HttpUnityControlClient : IUnityControlTransportClient
     {
-        private const int ResponseGraceMs = 1000;
-        private readonly HttpClient httpClient;
-        private readonly int timeoutMs;
+        private readonly HttpClient _httpClient;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
-        public HttpUnityControlClient(Uri baseUri, int timeoutMs)
+        public HttpUnityControlClient(Uri baseUri)
         {
-            this.timeoutMs = timeoutMs;
-            httpClient = new HttpClient
+            _httpClient = new HttpClient
             {
                 BaseAddress = baseUri,
             };
         }
 
-        public async Task<ControlToolCallResult> CallToolAsync(
-            string toolName,
-            JsonObject arguments,
-            int? timeoutMsOverride,
+        public string TransportName => "http";
+
+        public async Task<ControlTransportResult> SendAsync(
+            UnityControlToolCallRequest request,
+            int connectTimeoutMs,
+            int totalTimeoutMs,
             CancellationToken cancellationToken)
         {
-            var request = new UnityControlToolCallRequest
-            {
-                Name = toolName,
-                ArgumentsJson = arguments.ToJsonString(),
-            };
-
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter((timeoutMsOverride ?? timeoutMs) + ResponseGraceMs);
+            timeoutCts.CancelAfter(Math.Max(totalTimeoutMs, 1000));
 
+            string phase = "connect";
             try
             {
-                using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                phase = "write";
+                using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
                     "mcp/tool/call",
                     request,
                     JsonOptions,
                     timeoutCts.Token);
 
+                phase = "read";
                 if (!response.IsSuccessStatusCode)
                 {
-                    return new ControlToolCallResult(
-                        IsError: true,
-                        ContentText: $"Control HTTP status {(int)response.StatusCode} ({response.StatusCode}).",
-                        StructuredContent: new JsonObject
-                        {
-                            ["status"] = "control_http_error",
-                            ["transport"] = "http",
-                            ["statusCode"] = (int)response.StatusCode,
-                        });
+                    string message = $"Control HTTP status {(int)response.StatusCode} ({response.StatusCode}).";
+                    return TransportFailure("control_http_error", message, phase, request, (int)response.StatusCode);
                 }
 
+                phase = "parse";
                 UnityControlToolCallResponse? controlResponse =
                     await response.Content.ReadFromJsonAsync<UnityControlToolCallResponse>(
                         JsonOptions,
                         timeoutCts.Token);
-
                 if (controlResponse is null)
                 {
-                    return new ControlToolCallResult(
-                        IsError: true,
-                        ContentText: "Control returned empty response.",
-                        StructuredContent: new JsonObject
-                        {
-                            ["status"] = "control_invalid_response",
-                            ["transport"] = "http",
-                        });
+                    return TransportFailure(
+                        "control_invalid_response",
+                        "Control returned empty response.",
+                        phase,
+                        request);
                 }
 
-                return new ControlToolCallResult(
-                    IsError: controlResponse.IsError,
-                    ContentText: string.IsNullOrWhiteSpace(controlResponse.ContentText)
-                        ? $"Tool '{toolName}' completed."
-                        : controlResponse.ContentText,
-                    StructuredContent: ParseStructuredContent(controlResponse.StructuredContentJson));
+                return new ControlTransportResult(
+                    IsTransportError: false,
+                    Response: controlResponse,
+                    Status: controlResponse.IsError ? "tool_error" : "ok",
+                    Transport: TransportName,
+                    TransportPhase: "complete",
+                    Message: controlResponse.ContentText ?? string.Empty);
             }
             catch (Exception ex)
             {
-                return new ControlToolCallResult(
-                    IsError: true,
-                    ContentText: $"Control HTTP request failed: {ex.Message}",
-                    StructuredContent: new JsonObject
-                    {
-                        ["status"] = "control_unreachable",
-                        ["transport"] = "http",
-                    });
+                string status = string.Equals(phase, "parse", StringComparison.Ordinal)
+                    ? "control_invalid_response"
+                    : "control_unreachable";
+                return TransportFailure(status, $"Control HTTP request failed: {ex.Message}", phase, request);
             }
         }
 
-        private static JsonNode? ParseStructuredContent(string? rawJson)
+        private ControlTransportResult TransportFailure(
+            string status,
+            string message,
+            string phase,
+            UnityControlToolCallRequest request,
+            int? statusCode = null)
         {
-            try
+            var payload = new JsonObject
             {
-                return string.IsNullOrWhiteSpace(rawJson) ? null : JsonNode.Parse(rawJson);
-            }
-            catch
+                ["status"] = status,
+                ["message"] = message,
+                ["transport"] = TransportName,
+                ["transportPhase"] = phase,
+                ["toolName"] = request.Name,
+                ["requestId"] = request.RequestId,
+                ["attempt"] = request.Attempt,
+            };
+
+            if (statusCode.HasValue)
             {
-                return new JsonObject { ["raw"] = rawJson, };
+                payload["statusCode"] = statusCode.Value;
             }
+
+            return new ControlTransportResult(
+                IsTransportError: true,
+                Response: null,
+                Status: status,
+                Transport: TransportName,
+                TransportPhase: phase,
+                Message: message,
+                StructuredContent: payload);
         }
-    }
-
-    public sealed class UnityControlToolCallRequest
-    {
-        public string Name { get; set; } = string.Empty;
-        public string ArgumentsJson { get; set; } = "{}";
-    }
-
-    public sealed class UnityControlToolCallResponse
-    {
-        public bool IsError { get; set; }
-        public string? ContentText { get; set; }
-        public string? StructuredContentJson { get; set; }
     }
 }

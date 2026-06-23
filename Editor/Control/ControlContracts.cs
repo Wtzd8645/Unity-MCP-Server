@@ -6,8 +6,13 @@ namespace Blanketmen.UnityMcp.Editor.Control
     [Serializable]
     internal class ControlToolCallRequest
     {
+        public string requestId;
         public string name;
         public string argumentsJson;
+        public string deadlineUtc;
+        public int attempt;
+        public string protocolVersion;
+        public bool durable;
     }
 
     [Serializable]
@@ -16,6 +21,50 @@ namespace Blanketmen.UnityMcp.Editor.Control
         public bool isError;
         public string contentText;
         public string structuredContentJson;
+        public string requestId;
+        public string controlEpoch;
+        public string requestStatus;
+        public string protocolVersion;
+    }
+
+    [Serializable]
+    internal class ControlStatusArgs
+    {
+    }
+
+    [Serializable]
+    internal class ControlStatusResult
+    {
+        public string status;
+        public string controlEpoch;
+        public string protocolVersion;
+        public string serverTimeUtc;
+        public bool isRunning;
+        public bool isCompiling;
+        public bool isUpdating;
+        public bool isPlaying;
+        public bool isPaused;
+    }
+
+    [Serializable]
+    internal class ControlRequestStateArgs
+    {
+        public string requestId;
+    }
+
+    [Serializable]
+    internal class ControlRequestStateResult
+    {
+        public string status;
+        public string requestStatus;
+        public string requestId;
+        public string toolName;
+        public string message;
+        public string statePath;
+        public string responseJson;
+        public string deadlineUtc;
+        public string updatedUtc;
+        public string controlEpoch;
     }
 
     [Serializable]
@@ -1426,6 +1475,8 @@ namespace Blanketmen.UnityMcp.Editor.Control
         public string runId;
         public string mode;
         public string message;
+        public string phase;
+        public string deadlineUtc;
         public string statePath;
         public string xmlReportPath;
         public bool isRecovered;

@@ -36,6 +36,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             EnsureRunId(args);
             string requestedMode = NormalizeMode(args.mode);
+            int timeoutMs = Mathf.Clamp(args.timeoutMs, 5000, 3600000);
+            DateTime deadlineUtc = DateTime.UtcNow.AddMilliseconds(timeoutMs);
 
             Type apiType = FindType(TestRunnerApiTypeName);
             Type settingsType = FindType(ExecutionSettingsTypeName);
@@ -50,7 +52,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return false;
             }
 
-            TestRunStore.Begin(args, requestedMode);
+            TestRunStore.Begin(args, requestedMode, deadlineUtc);
 
             object api = null;
             object settings = null;
@@ -64,10 +66,10 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     settings = CreateExecutionSettings(settingsType, filterType, filter, requestedMode);
                     observer.TryAttach(api, apiType);
                 },
-                timeoutMs: 15000,
+                timeoutMs: RemainingMs(deadlineUtc),
                 out string setupError))
             {
-                errorStatus = "tool_exception";
+                errorStatus = DateTime.UtcNow >= deadlineUtc ? "test_run_startup_timeout" : "tool_exception";
                 errorMessage = "Failed to initialize test runner: " + setupError;
                 TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
@@ -93,23 +95,24 @@ namespace Blanketmen.UnityMcp.Editor.Modules
 
             bool started = mainThreadInvoker(
                 () => ExecuteRun(api, execute, settings, observer),
-                timeoutMs: 30000,
+                timeoutMs: RemainingMs(deadlineUtc),
                 out string executeError);
             if (!started)
             {
                 observer.TryDetach(mainThreadInvoker, api, apiType);
-                errorStatus = "tool_exception";
+                errorStatus = DateTime.UtcNow >= deadlineUtc ? "test_run_execute_timeout" : "tool_exception";
                 errorMessage = "Failed to start test run: " + executeError;
                 TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
             }
 
-            int timeoutMs = Mathf.Clamp(args.timeoutMs, 5000, 3600000);
-            if (!observer.WaitForFinished(timeoutMs))
+            TestRunStore.MarkRunning(args.runId, requestedMode, args.includeXmlReportPath);
+            int remainingMs = RemainingMs(deadlineUtc);
+            if (remainingMs <= 0 || !observer.WaitForFinished(remainingMs))
             {
                 CancelRun(mainThreadInvoker, api, apiType);
                 observer.TryDetach(mainThreadInvoker, api, apiType);
-                errorStatus = "tool_timeout";
+                errorStatus = "test_run_timeout";
                 errorMessage = "Test run timed out after " + timeoutMs + " ms.";
                 TestRunStore.MarkFailed(args.runId, requestedMode, errorStatus, errorMessage, args.includeXmlReportPath);
                 return false;
@@ -136,6 +139,17 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             TestRunStore.MarkCompleted(result, isRecovered: false);
 
             return true;
+        }
+
+        private static int RemainingMs(DateTime deadlineUtc)
+        {
+            double remaining = (deadlineUtc - DateTime.UtcNow).TotalMilliseconds;
+            if (remaining <= 0)
+            {
+                return 0;
+            }
+
+            return (int)Math.Min(int.MaxValue, remaining);
         }
 
         public static ControlToolCallResponse HandleGetTestRunState(
@@ -579,15 +593,13 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                         finishedObserver => CompleteRecoveredRun(state.runId, state.mode, args.includeXmlReportPath, finishedObserver, api, apiType));
                     observer.TryAttach(api, apiType);
                 },
-                15000,
+                Math.Max(1000, RemainingRecoveryMs(state)),
                 out string attachError);
 
             if (!attached || api == null || observer == null)
             {
-                TestRunStore.MarkFailed(
+                TestRunStore.MarkRecoveryMessage(
                     state.runId,
-                    state.mode,
-                    "test_run_recovery_failed",
                     "Failed to attach test run recovery callbacks: " + attachError,
                     args.includeXmlReportPath);
                 return;
@@ -606,6 +618,32 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     };
                 }
             }
+        }
+
+        private static int RemainingRecoveryMs(TestRunState state)
+        {
+            if (state == null || string.IsNullOrEmpty(state.deadlineUtc))
+            {
+                return 15000;
+            }
+
+            DateTime deadline;
+            if (!DateTime.TryParse(
+                    state.deadlineUtc,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                    out deadline))
+            {
+                return 15000;
+            }
+
+            double remaining = (deadline.ToUniversalTime() - DateTime.UtcNow).TotalMilliseconds;
+            if (remaining <= 0)
+            {
+                return 0;
+            }
+
+            return (int)Math.Min(int.MaxValue, remaining);
         }
 
         private static void CompleteRecoveredRun(
@@ -665,6 +703,9 @@ namespace Blanketmen.UnityMcp.Editor.Modules
             public string errorStatus;
             public string startedUtc;
             public string completedUtc;
+            public string deadlineUtc;
+            public string phase;
+            public string lastRecoveryMessage;
             public string argumentsJson;
             public string resultJson;
             public string statePath;
@@ -707,21 +748,36 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 return string.IsNullOrEmpty(normalized) ? Guid.NewGuid().ToString("N") : normalized;
             }
 
-            public static void Begin(RunTestsArgs args, string mode)
+            public static void Begin(RunTestsArgs args, string mode, DateTime deadlineUtc)
             {
                 var state = new TestRunState
                 {
-                    status = "running",
+                    status = "starting",
                     runId = args.runId,
                     mode = mode,
-                    message = "Test run started.",
+                    message = "Test run is starting.",
                     startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    deadlineUtc = deadlineUtc.ToString("O", CultureInfo.InvariantCulture),
+                    phase = "startup",
                     argumentsJson = JsonUtility.ToJson(args),
                     statePath = GetStatePath(args.runId),
                     xmlReportPath = args.includeXmlReportPath ? GetXmlReportPath(args.runId) : null,
                     isRecovered = false,
                 };
 
+                Save(state);
+            }
+
+            public static void MarkRunning(string runId, string mode, bool includeXmlReportPath)
+            {
+                runId = NormalizeRunId(runId);
+                var state = LoadOrCreate(runId);
+                state.status = "running";
+                state.mode = string.IsNullOrEmpty(mode) ? "Unknown" : mode;
+                state.message = "Test run is executing.";
+                state.phase = "waiting_for_results";
+                state.statePath = GetStatePath(runId);
+                state.xmlReportPath = includeXmlReportPath ? GetXmlReportPath(runId) : null;
                 Save(state);
             }
 
@@ -736,6 +792,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 state.status = "completed";
                 state.mode = result.mode;
                 state.message = "Test run completed.";
+                state.phase = "completed";
                 state.completedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
                 state.resultJson = JsonUtility.ToJson(result);
                 state.statePath = GetStatePath(result.runId);
@@ -752,9 +809,21 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                 state.mode = string.IsNullOrEmpty(mode) ? "Unknown" : mode;
                 state.errorStatus = string.IsNullOrEmpty(status) ? "tool_exception" : status;
                 state.message = message;
+                state.phase = status;
                 state.completedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
                 state.statePath = GetStatePath(runId);
                 state.xmlReportPath = includeXmlReportPath ? GetXmlReportPath(runId) : null;
+                Save(state);
+            }
+
+            public static void MarkRecoveryMessage(string runId, string message, bool includeXmlReportPath)
+            {
+                runId = NormalizeRunId(runId);
+                var state = LoadOrCreate(runId);
+                state.lastRecoveryMessage = message;
+                state.message = string.IsNullOrEmpty(state.message) ? message : state.message;
+                state.statePath = GetStatePath(runId);
+                state.xmlReportPath = includeXmlReportPath ? GetXmlReportPath(runId) : state.xmlReportPath;
                 Save(state);
             }
 
@@ -782,6 +851,7 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                         state.xmlReportPath = GetXmlReportPath(state.runId);
                     }
 
+                    ExpireIfNeeded(state);
                     return true;
                 }
                 catch
@@ -803,6 +873,8 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     runId = state.runId,
                     mode = state.mode,
                     message = state.message,
+                    phase = state.phase,
+                    deadlineUtc = state.deadlineUtc,
                     statePath = state.statePath,
                     xmlReportPath = state.xmlReportPath,
                     isRecovered = state.isRecovered,
@@ -846,6 +918,40 @@ namespace Blanketmen.UnityMcp.Editor.Modules
                     xmlReportPath = GetXmlReportPath(runId),
                     startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
                 };
+            }
+
+            private static void ExpireIfNeeded(TestRunState state)
+            {
+                if (state == null ||
+                    string.Equals(state.status, "completed", StringComparison.Ordinal) ||
+                    string.Equals(state.status, "failed", StringComparison.Ordinal) ||
+                    string.Equals(state.status, "expired", StringComparison.Ordinal) ||
+                    string.IsNullOrEmpty(state.deadlineUtc))
+                {
+                    return;
+                }
+
+                DateTime deadline;
+                if (!DateTime.TryParse(
+                        state.deadlineUtc,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                        out deadline))
+                {
+                    return;
+                }
+
+                if (DateTime.UtcNow <= deadline.ToUniversalTime())
+                {
+                    return;
+                }
+
+                state.status = "expired";
+                state.errorStatus = "test_run_timeout";
+                state.phase = "expired";
+                state.message = "Test run expired before Unity Control could report a final result.";
+                state.completedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                Save(state);
             }
 
             private static void Save(TestRunState state)

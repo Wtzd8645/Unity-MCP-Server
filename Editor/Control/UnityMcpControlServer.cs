@@ -14,6 +14,10 @@ namespace Blanketmen.UnityMcp.Editor.Control
     public static class UnityMcpControlServer
     {
         private const string ControlVersion = "0.1.0";
+        private const string ControlProtocolVersion = "2";
+        private const string GetStatusToolName = "__unity_control_get_status";
+        private const string GetRequestStateToolName = "__unity_control_get_request_state";
+        private const string GetTestRunStateToolName = "__unity_project_get_test_run_state";
         private const string DefaultHttpPrefix = "http://127.0.0.1:38110/";
         private const string DefaultPipeName = "unity-mcp-control";
         private const int MainThreadTimeoutMs = 5000;
@@ -33,6 +37,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
         private static PipeServerState pipeServerState;
         private static bool autoStartChecked;
         private static volatile bool isRunning;
+        private static readonly string ControlEpoch = Guid.NewGuid().ToString("N");
 
         public static event Action StatusChanged;
 
@@ -59,6 +64,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             Application.logMessageReceivedThreaded += OnUnityLogReceived;
             UnityMcpGatewayHost.StatusChanged += PublishStatusChanged;
+            ControlRequestLedger.ReconcileOpenRequests(ControlEpoch);
             IsRunning = false;
         }
 
@@ -121,6 +127,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
 
             IsRunning = true;
+            ControlRequestLedger.ReconcileOpenRequests(ControlEpoch);
             if (!StartControlTransport(out ControlTransportKind transport, out string startError))
             {
                 IsRunning = false;
@@ -264,6 +271,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
         private static void OnBeforeAssemblyReload()
         {
+            ControlRequestLedger.MarkOpenRequestsUnknownAfterReload(ControlEpoch);
             UnityMcpGatewayHost.PrepareForAssemblyReload();
             StopInternal(stopGateway: false);
         }
@@ -431,7 +439,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 return;
             }
 
-            ControlToolCallResponse response = ExecuteOnMainThreadWithTimeout(request, MainThreadTimeoutMs);
+            ControlToolCallResponse response = HandleDecodedRequest(request);
             TryWriteHttpResponse(context, 200, JsonUtility.ToJson(response));
         }
 
@@ -621,7 +629,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
                             }
                             else
                             {
-                                response = ExecuteOnMainThreadWithTimeout(request, MainThreadTimeoutMs);
+                                response = HandleDecodedRequest(request);
                             }
                         }
 
@@ -663,30 +671,156 @@ namespace Blanketmen.UnityMcp.Editor.Control
             }
         }
 
-        private static ControlToolCallResponse ExecuteOnMainThreadWithTimeout(ControlToolCallRequest request, int timeoutMs)
+        private static ControlToolCallResponse HandleDecodedRequest(ControlToolCallRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.name))
+            {
+                return ControlResponses.Error("Missing request.name.", "invalid_request", null);
+            }
+
+            if (string.IsNullOrEmpty(request.requestId))
+            {
+                request.requestId = Guid.NewGuid().ToString("N");
+            }
+            else
+            {
+                request.requestId = ControlRequestLedger.NormalizeRequestId(request.requestId);
+            }
+
+            if (!string.Equals(request.protocolVersion, ControlProtocolVersion, StringComparison.Ordinal))
+            {
+                ControlToolCallResponse mismatch = ControlResponses.Error(
+                    "Gateway and Unity Control internal protocol versions do not match. Restart Unity and Gateway.",
+                    "control_protocol_mismatch",
+                    request.name);
+                return AttachEnvelope(mismatch, request, "failed");
+            }
+
+            if (HandleInternalControlRequest(request, out ControlToolCallResponse internalResponse))
+            {
+                return AttachEnvelope(internalResponse, request, internalResponse != null && internalResponse.isError ? "failed" : "completed");
+            }
+
+            if (request.durable &&
+                ControlRequestLedger.TryGetTerminalResponse(request.requestId, out ControlToolCallResponse cachedResponse))
+            {
+                return AttachEnvelope(cachedResponse, request, cachedResponse.isError ? "failed" : "completed");
+            }
+
+            if (!WaitForEditorReady(request, out ControlToolCallResponse editorBusyResponse))
+            {
+                ControlToolCallResponse response = AttachEnvelope(editorBusyResponse, request, "failed");
+                ControlRequestLedger.MarkFinal(request, response, ControlEpoch);
+                return response;
+            }
+
+            ControlRequestLedger.MarkReceived(request, ControlEpoch);
+            return ExecuteOnMainThreadWithDeadline(request);
+        }
+
+        private static bool HandleInternalControlRequest(ControlToolCallRequest request, out ControlToolCallResponse response)
+        {
+            response = null;
+            if (string.Equals(request.name, GetStatusToolName, StringComparison.Ordinal))
+            {
+                response = ControlResponses.Success(
+                    "Unity Control status loaded.",
+                    new ControlStatusResult
+                    {
+                        status = IsRunning
+                            ? (EditorApplication.isCompiling || EditorApplication.isUpdating ? "busy" : "ready")
+                            : "stopping",
+                        controlEpoch = ControlEpoch,
+                        protocolVersion = ControlProtocolVersion,
+                        serverTimeUtc = DateTime.UtcNow.ToString("O"),
+                        isRunning = IsRunning,
+                        isCompiling = EditorApplication.isCompiling,
+                        isUpdating = EditorApplication.isUpdating,
+                        isPlaying = EditorApplication.isPlaying,
+                        isPaused = EditorApplication.isPaused,
+                    });
+                return true;
+            }
+
+            if (string.Equals(request.name, GetRequestStateToolName, StringComparison.Ordinal))
+            {
+                ControlRequestStateArgs args = ControlJson.ParseArgs(
+                    request.argumentsJson,
+                    new ControlRequestStateArgs());
+                if (args == null || string.IsNullOrWhiteSpace(args.requestId))
+                {
+                    response = ControlResponses.Error("requestId is required.", "invalid_argument", request.name);
+                    return true;
+                }
+
+                response = ControlResponses.Success(
+                    "Unity Control request state loaded.",
+                    ControlRequestLedger.Query(args.requestId));
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool WaitForEditorReady(ControlToolCallRequest request, out ControlToolCallResponse response)
+        {
+            response = null;
+            while ((EditorApplication.isCompiling || EditorApplication.isUpdating) && RemainingMs(request) > 0)
+            {
+                Thread.Sleep(100);
+            }
+
+            if (!EditorApplication.isCompiling && !EditorApplication.isUpdating)
+            {
+                return true;
+            }
+
+            response = ControlResponses.Error(
+                "Unity Editor is busy compiling or updating assets.",
+                "editor_busy",
+                request.name);
+            return false;
+        }
+
+        private static ControlToolCallResponse ExecuteOnMainThreadWithDeadline(ControlToolCallRequest request)
         {
             if (string.Equals(request.name, "unity_project_run_tests", StringComparison.Ordinal) ||
                 string.Equals(request.name, "unity_project_switch_build_target", StringComparison.Ordinal) ||
                 string.Equals(request.name, "unity_project_build_player", StringComparison.Ordinal) ||
                 string.Equals(request.name, "unity_runtime_start_playmode", StringComparison.Ordinal) ||
-                string.Equals(request.name, "unity_runtime_stop_playmode", StringComparison.Ordinal))
+                string.Equals(request.name, "unity_runtime_stop_playmode", StringComparison.Ordinal) ||
+                string.Equals(request.name, GetTestRunStateToolName, StringComparison.Ordinal))
             {
                 try
                 {
-                    return ExecuteTool(request);
+                    ControlRequestLedger.MarkStatus(request, "executing", "Request is executing.", ControlEpoch);
+                    ControlToolCallResponse rawResponse = ExecuteTool(request);
+                    ControlToolCallResponse directResponse = AttachEnvelope(
+                        rawResponse,
+                        request,
+                        rawResponse != null && rawResponse.isError ? "failed" : "completed");
+                    ControlRequestLedger.MarkFinal(request, directResponse, ControlEpoch);
+                    return directResponse;
                 }
                 catch (Exception ex)
                 {
-                    return ControlResponses.Error("Tool execution failed: " + ex.Message, "tool_exception", request.name);
+                    ControlToolCallResponse errorResponse = AttachEnvelope(
+                        ControlResponses.Error("Tool execution failed: " + ex.Message, "tool_exception", request.name),
+                        request,
+                        "failed");
+                    ControlRequestLedger.MarkFinal(request, errorResponse, ControlEpoch);
+                    return errorResponse;
                 }
             }
 
             ControlToolCallResponse response = null;
             Exception error = null;
             int shouldRun = 1;
+            int timeoutMs = Math.Max(1, RemainingMs(request));
 
             using (var done = new ManualResetEvent(false))
             {
+                ControlRequestLedger.MarkStatus(request, "queued_main_thread", "Request is queued for Unity main thread.", ControlEpoch);
                 MainThreadActions.Enqueue(() =>
                 {
                     if (Interlocked.CompareExchange(ref shouldRun, 1, 1) == 0)
@@ -703,6 +837,7 @@ namespace Blanketmen.UnityMcp.Editor.Control
 
                     try
                     {
+                        ControlRequestLedger.MarkStatus(request, "executing", "Request is executing on Unity main thread.", ControlEpoch);
                         response = ExecuteTool(request);
                     }
                     catch (Exception ex)
@@ -718,16 +853,74 @@ namespace Blanketmen.UnityMcp.Editor.Control
                 if (!done.WaitOne(timeoutMs))
                 {
                     Interlocked.Exchange(ref shouldRun, 0);
-                    return ControlResponses.Error("Main-thread execution timed out.", "tool_timeout", request.name);
+                    ControlToolCallResponse timeoutResponse = AttachEnvelope(
+                        ControlResponses.Error("Main-thread execution timed out.", "tool_main_thread_timeout", request.name),
+                        request,
+                        "failed");
+                    ControlRequestLedger.MarkFinal(request, timeoutResponse, ControlEpoch);
+                    return timeoutResponse;
                 }
             }
 
             if (error != null)
             {
-                return ControlResponses.Error("Tool execution failed: " + error.Message, "tool_exception", request.name);
+                ControlToolCallResponse errorResponse = AttachEnvelope(
+                    ControlResponses.Error("Tool execution failed: " + error.Message, "tool_exception", request.name),
+                    request,
+                    "failed");
+                ControlRequestLedger.MarkFinal(request, errorResponse, ControlEpoch);
+                return errorResponse;
             }
 
-            return response ?? ControlResponses.Error("Tool execution produced no response.", "tool_no_response", request.name);
+            ControlToolCallResponse finalResponse = AttachEnvelope(
+                response ?? ControlResponses.Error("Tool execution produced no response.", "tool_no_response", request.name),
+                request,
+                response != null && !response.isError ? "completed" : "failed");
+            ControlRequestLedger.MarkFinal(request, finalResponse, ControlEpoch);
+            return finalResponse;
+        }
+
+        private static ControlToolCallResponse AttachEnvelope(
+            ControlToolCallResponse response,
+            ControlToolCallRequest request,
+            string requestStatus)
+        {
+            if (response == null)
+            {
+                response = ControlResponses.Error("Tool execution produced no response.", "tool_no_response", request == null ? null : request.name);
+            }
+
+            response.requestId = request == null ? null : request.requestId;
+            response.controlEpoch = ControlEpoch;
+            response.requestStatus = requestStatus;
+            response.protocolVersion = ControlProtocolVersion;
+            return response;
+        }
+
+        private static int RemainingMs(ControlToolCallRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.deadlineUtc))
+            {
+                return MainThreadTimeoutMs;
+            }
+
+            DateTime deadline;
+            if (!DateTime.TryParse(
+                    request.deadlineUtc,
+                    null,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal,
+                    out deadline))
+            {
+                return MainThreadTimeoutMs;
+            }
+
+            double remaining = (deadline.ToUniversalTime() - DateTime.UtcNow).TotalMilliseconds;
+            if (remaining <= 0)
+            {
+                return 0;
+            }
+
+            return (int)Math.Min(int.MaxValue, remaining);
         }
 
         private static ControlToolCallResponse ExecuteTool(ControlToolCallRequest request)

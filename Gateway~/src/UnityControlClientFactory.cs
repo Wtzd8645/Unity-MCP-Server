@@ -18,7 +18,9 @@ namespace Blanketmen.UnityMcp.Gateway
             if (transport == UnityControlTransport.Pipe)
             {
                 string pipeName = Environment.GetEnvironmentVariable("UNITY_MCP_CONTROL_PIPE_NAME") ?? "unity-mcp-control";
-                return new NamedPipeUnityControlClient(pipeName, timeoutMs);
+                return new ControlCallCoordinator(
+                    new NamedPipeUnityControlClient(pipeName),
+                    timeoutMs);
             }
 
             string rawUrl = Environment.GetEnvironmentVariable("UNITY_MCP_CONTROL_HTTP_URL") ?? "http://127.0.0.1:38110/";
@@ -28,7 +30,9 @@ namespace Blanketmen.UnityMcp.Gateway
                     $"Invalid UNITY_MCP_CONTROL_HTTP_URL: '{rawUrl}'");
             }
 
-            return new HttpUnityControlClient(baseUri, timeoutMs);
+            return new ControlCallCoordinator(
+                new HttpUnityControlClient(baseUri),
+                timeoutMs);
         }
 
         private static UnityControlTransport ParseTransport(string? value)
